@@ -92,6 +92,13 @@ const DeleteUserPage = () => {
           </button>
           
           <button
+            onClick={() => navigate('/closet')}
+            className="w-full py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition shadow-sm"
+          >
+            옷장으로 돌아가기
+          </button>
+          
+          <button
             onClick={handleDelete}
             className="w-full py-2.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 font-medium transition text-sm"
           >

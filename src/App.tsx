@@ -3,6 +3,13 @@ import LoginPage from './pages/Login';
 import SignupPage from './pages/Signup';
 import DeleteuserPage from './pages/Deleteuser';
 import ChangePw from './pages/Changepw';
+import Closet from './pages/closet/Closet';
+import AddClothes from './pages/closet/AddClothes';
+import AllClothes from './pages/closet/AllClothes';
+import CoordiSave from './pages/closet/CoordiSave';
+import AllCoordi from './pages/closet/AllCoordi';
+import ClosetLayout from './layouts/Closetlayout';
+
 
 function App() {
   return (
@@ -12,6 +19,14 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/deleteuser" element={<DeleteuserPage />} />
       <Route path="/change-password" element={<ChangePw />} />
+      
+      <Route element={<ClosetLayout />}>
+        <Route path="/closet" element={<Closet />} />
+        <Route path="/closet/all" element={<AllClothes />} />
+        <Route path="/closet/add" element={<AddClothes />} />
+        <Route path="/coordi/save" element={<CoordiSave />} />
+        <Route path="/coordi/all" element={<AllCoordi />} />
+      </Route>
     </Routes>
   );
 }
