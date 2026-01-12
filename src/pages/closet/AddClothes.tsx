@@ -1,13 +1,13 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import album from '../../assets/icons/album.png';
 import camera from '../../assets/icons/camera.png';
-import { COLOR_OPTIONS, SEASON_OPTIONS, CATEGORY_OPTIONS } from '../../data/constants';
-
-interface AddClothesProps { onBack: () => void; }
+import { COLOR_OPTIONS, SEASON_OPTIONS, CATEGORY_OPTIONS, type Option } from '../../data/constants';
 
 const BASE_URL = 'http://192.168.xxx.xxx:8080';
 
-const AddClothes = ({ onBack }: AddClothesProps) => {
+const AddClothes = () => {
+  const navigate = useNavigate();
   const [image, setImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [category, setCategory] = useState('');
@@ -41,7 +41,7 @@ const AddClothes = ({ onBack }: AddClothesProps) => {
       });
       const result = await response.json();
       if (result.success) {
-        alert(result.message || "옷이 추가되었어요.");
+        alert("옷이 추가되었어요.");
         setIsSubmitted(true);
       } else {
         alert("등록 실패: " + result.message);
@@ -68,7 +68,7 @@ const AddClothes = ({ onBack }: AddClothesProps) => {
         <div className="text-5xl">✅</div>
         <h2 className="text-xl font-bold">의상이 등록되었습니다.</h2>
         <button onClick={() => { setImage(null); setIsSubmitted(false); }} className="w-full p-4 bg-blue-600 text-white rounded-xl font-bold">추가로 의상 등록하기</button>
-        <button onClick={onBack} className="w-full p-4 bg-white text-gray-500 border border-gray-200 rounded-xl font-bold">옷장으로 돌아가기</button>
+        <button onClick={() => navigate('/closet')} className="w-full p-4 bg-white text-gray-500 border border-gray-200 rounded-xl font-bold">옷장으로 돌아가기</button>
       </div>
     );
   }
@@ -76,7 +76,7 @@ const AddClothes = ({ onBack }: AddClothesProps) => {
   return (
     <div className="flex flex-col h-full bg-white overflow-y-auto">
       <div className="flex items-center gap-3 p-6 border-b sticky top-0 bg-white z-10">
-        <button onClick={onBack} className="text-2xl">←</button>
+        <button onClick={() => navigate('/closet')} className="text-2xl">←</button>
         <h3 className="text-xl font-bold">의상 등록하기</h3>
       </div>
 
@@ -105,7 +105,7 @@ const AddClothes = ({ onBack }: AddClothesProps) => {
                 <label className="block text-sm font-bold text-gray-500 mb-2">카테고리</label>
                 <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="" disabled>선택하세요</option>
-                  {CATEGORY_OPTIONS.map((opt: any) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  {CATEGORY_OPTIONS.map((opt: Option) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
 
@@ -113,7 +113,7 @@ const AddClothes = ({ onBack }: AddClothesProps) => {
                 <label className="block text-sm font-bold text-gray-500 mb-2">계절</label>
                 <select value={season} onChange={(e) => setSeason(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none">
                   <option value="" disabled>선택하세요</option>
-                  {SEASON_OPTIONS.map((opt: any) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  {SEASON_OPTIONS.map((opt: Option) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
 
@@ -129,7 +129,7 @@ const AddClothes = ({ onBack }: AddClothesProps) => {
                 <label className="block text-sm font-bold text-gray-500 mb-2">색상</label>
                 <select value={color} onChange={(e) => setColor(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none">
                   <option value="" disabled>색상을 선택하세요</option>
-                  {COLOR_OPTIONS.map((opt: any) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  {COLOR_OPTIONS.map((opt: Option) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
 

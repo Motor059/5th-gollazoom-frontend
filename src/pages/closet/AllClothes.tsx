@@ -1,27 +1,34 @@
-import { useState, useEffect } from 'react';
-import { CATEGORY_OPTIONS } from '../../data/constants';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CATEGORY_OPTIONS, type Option } from '../../data/constants';
 import ClothDetailModal from '../../components/ClothDetailModal';
 
-interface AllClothesProps {
-  onBack: () => void;
+interface Cloth {
+  clothId: string;
+  imageUrl: string;
+  category: string;
+  season: string;
+  rainOk: boolean;
+  memo?: string;
 }
 
-const BASE_URL = 'http://192.168.xxx.xxx:8080';
+const BASE_URL = 'http://192.168.xxx.xxx:8080'; // 팀원 백엔드 IP 확인 필요
 
-const AllClothes = ({ onBack }: AllClothesProps) => {
+const AllClothes = () => {
+  const navigate = useNavigate();
+
   const [view, setView] = useState<'category' | 'list'>('category');
-  const [selectedCategory, setSelectedCategory] = useState<any>(null);
-  const [clothesData, setClothesData] = useState<any[]>([]);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Option | null>(null);
+  const [clothesData, setClothesData] = useState<Cloth[]>([]);
+  const [selectedItem, setSelectedItem] = useState<Cloth | null>(null);
 
-  // 1. 서버에서 전체 의상 목록 가져오기 (원본 로직 보존)
-  const fetchClothes = async () => {
+  const fetchClothes = useCallback(async () => {
     try {
       const response = await fetch(`${BASE_URL}/api/closet`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer {accessToken}' 
+          'Authorization': 'Bearer {accessToken}' // 실제 토큰 로직 필요
         },
         body: JSON.stringify({ page: 0, size: 20 })
       });
@@ -32,13 +39,13 @@ const AllClothes = ({ onBack }: AllClothesProps) => {
     } catch (error) {
       console.error("의상 목록 로드 실패:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchClothes();
-  }, []);
+  }, [fetchClothes]);
 
-  // 2. 개별 아이템 클릭 시 상세 정보 가져오기
+  // 3. 개별 아이템 클릭 시 상세 정보 가져오기
   const handleItemClick = async (clothId: string) => {
     try {
       const response = await fetch(`${BASE_URL}/api/closet/${clothId}`, {
@@ -56,7 +63,7 @@ const AllClothes = ({ onBack }: AllClothesProps) => {
     return (
       <div className="flex flex-col h-full bg-white p-6">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={onBack} className="text-2xl">←</button>
+          <button onClick={() => navigate('/closet')} className="text-2xl">←</button>
           <h3 className="text-xl font-bold">모든 의상</h3>
         </div>
         <div className="flex flex-col gap-3">
@@ -74,6 +81,8 @@ const AllClothes = ({ onBack }: AllClothesProps) => {
     );
   }
 
+  
+  if (!selectedCategory) return null;
   // 선택된 카테고리에 맞는 아이템 필터링
   const filteredItems = clothesData.filter(item => item.category === selectedCategory.value);
 
@@ -81,6 +90,7 @@ const AllClothes = ({ onBack }: AllClothesProps) => {
     <div className="flex flex-col h-full bg-white p-6">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => setView('category')} className="text-2xl">←</button>
+        {/* 위에서 null 체크를 했으므로 안전하게 접근 가능 */}
         <h3 className="text-xl font-bold">{selectedCategory.label} 목록</h3>
       </div>
 
