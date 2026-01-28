@@ -1,9 +1,11 @@
 import { Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/Login';
 import SignupPage from './pages/Signup';
-import DeleteuserPage from './pages/Deleteuser';
+import UserInfo from './pages/Userinfo';
 import ChangePw from './pages/Changepw';
 import Home from './pages/Home';
+import Worktime from './pages/Worktime';
+
 import Closet from './pages/closet/Closet';
 import AddClothes from './pages/closet/AddClothes';
 import AllClothes from './pages/closet/AllClothes';
@@ -18,10 +20,11 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/change-password" element={<ChangePw />} />
+      <Route path="/worktime" element={<Worktime />} />
 
       <Route element={<ClosetLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/deleteuser" element={<DeleteuserPage />} />
+        <Route path="/userinfo" element={<UserInfo />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/closet" element={<Closet />} />
         <Route path="/closet/all" element={<AllClothes />} />

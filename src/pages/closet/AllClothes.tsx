@@ -24,8 +24,13 @@ const AllClothes = () => {
   const fetchClothes = useCallback(async () => {
     try {
       const response = await getClothes({ page: 0, size: 20 });
-      if (response && response.items) {
-        setClothesData(response.items);
+      console.log("서버 응답 전체 데이터:", response);
+      
+      if (Array.isArray(response)) {
+        setClothesData(response);
+      }
+      else if (response && Array.isArray(response.data)) {
+        setClothesData(response.data);
       }
     } catch (error) {
       console.error("의상 목록 로드 실패:", error);

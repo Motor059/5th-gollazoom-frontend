@@ -1,8 +1,28 @@
-import { deleteUser } from "../api/users";
+import { deleteUser, getUserInfo } from "../api/users";
 import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 
-const DeleteUserPage = () => {
+const UserInfo = () => {
     const navigate = useNavigate();
+    const [user, setUser] = useState({
+        username: "",
+        nickname: "",
+        worktime: "",
+        //savedTime: ""
+    });
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const data = await getUserInfo();
+                setUser(data);
+            } catch (error) {
+                console.error("내 정보 로딩 실패:", error);
+            }
+        };
+        fetchUserInfo();
+    }, []);
+
     const handleDelete = async () => {
         if (!window.confirm("정말로 회원탈퇴를 진행하시겠습니까?")) return;
         try {
@@ -33,7 +53,7 @@ const DeleteUserPage = () => {
               아이디
             </label>
             <div className="text-lg font-medium text-gray-800">
-              test
+              {user?.username}
             </div>
           </div>
 
@@ -44,7 +64,7 @@ const DeleteUserPage = () => {
                 닉네임
               </label>
               <div className="text-lg font-medium text-gray-800 tracking-widest">
-                hongik
+                {user?.nickname}
               </div>
             </div>
 
@@ -64,13 +84,32 @@ const DeleteUserPage = () => {
                 비밀번호
               </label>
               <div className="text-lg font-medium text-gray-800 tracking-widest">
-                ********
+                *******
               </div>
             </div>
             {/* 비밀번호 변경 버튼 */}
             <button 
               className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
               onClick={() => navigate('/change-password')}
+            >
+              변경
+            </button>
+          </div>
+
+          {/* 출근 시간 */}
+          <div className="border-b border-gray-100 pb-4 flex justify-between items-center">
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                출근 시간
+              </label>
+              <div className="text-lg font-medium text-gray-800 tracking-widest">
+                {user?.worktime}
+              </div>
+            </div>
+            {/* 출근 시간 변경 버튼 */}
+            <button 
+              className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
+              onClick={() => navigate('/worktime')}
             >
               변경
             </button>
@@ -83,7 +122,7 @@ const DeleteUserPage = () => {
                 절약한 시간
               </label>
               <div className="text-lg font-medium text-gray-800 tracking-widest">
-                n시간 n분
+                {/*{user?.savedTime}*/}
               </div>
             </div>
             
@@ -95,7 +134,6 @@ const DeleteUserPage = () => {
               확인
             </button>
           </div>
-
         </div>
 
         {/* 하단 버튼 영역 */}
@@ -107,10 +145,9 @@ const DeleteUserPage = () => {
             회원 탈퇴하기
           </button>
         </div>
-
       </div>
     </div>
   )
 }
 
-export default DeleteUserPage;
+export default UserInfo;

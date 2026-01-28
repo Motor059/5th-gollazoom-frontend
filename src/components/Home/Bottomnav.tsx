@@ -6,12 +6,11 @@ const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 탭 메뉴 정의 (MyPage는 현재 Deleteuser 페이지를 사용 중이므로 경로 연결)
   const navItems = [
     { id: 'home', label: '홈', path: '/', icon: Home },
     { id: 'closet', label: '옷장', path: '/closet', icon: Shirt },
     { id: 'calendar', label: '캘린더', path: '/calendar', icon: Calendar },
-    { id: 'mypage', label: '나의 정보', path: '/deleteuser', icon: User },
+    { id: 'mypage', label: '나의 정보', path: '/userinfo', icon: User },
   ];
 
   return (
@@ -34,7 +33,7 @@ const BottomNav: React.FC = () => {
               <item.icon 
                 size={24} 
                 strokeWidth={isActive ? 2.5 : 2}
-                fill={isActive ? "currentColor" : "none"} // 활성화 시 아이콘 채우기 효과 (선택 사항)
+                fill={isActive ? "currentColor" : "none"}
                 className={isActive ? "scale-110 transition-transform" : ""}
               />
               <span className="text-[10px] font-bold tracking-tight">{item.label}</span>
