@@ -26,18 +26,22 @@ export const login = async (credentials: Credentials) => {
     return response.data;
 }
 
+export const changePassword = async (userPassword: changePassword) => {
+  const response = await api.patch(`/users/password`, userPassword);
+  return response.data;
+};
 
 export const deleteUser = async () => {
     const response = await api.delete(`/users/me`);
     return response.data;
 }
 
-export const changePassword = async (userPassword: changePassword) => {
-  const response = await api.patch(`/users/password`, userPassword);
-  return response.data;
-};
-
-export const getMyInfo = async () => {
+export const getUserInfo = async () => {
     const response = await api.get('/users/me');
     return response.data;
 }
+
+export const setWorkTime = async (time: string) => {
+    const response = await api.post('/users/worktime', { worktime: time });
+    return response.data;
+};

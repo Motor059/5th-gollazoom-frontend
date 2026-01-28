@@ -1,143 +1,211 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sun, Sparkles, ChevronRight, Shirt, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sun, Sparkles, CloudRain, AlertCircle } from 'lucide-react';
+import api from '../api/axios';
+
+// [1] 인터페이스 수정: success 필드 제거, 바로 데이터가 오는 구조로 변경
+interface RecommendationSet {
+  type: string;
+  score: number;
+  warnings: string[];
+  clothIds: number[]; 
+}
+
+// 응답 자체가 바로 데이터임
+interface RecommendationResponse {
+  date: string;
+  isRaining: boolean;
+  temperature: number;
+  recommendations: RecommendationSet[];
+}
+
+interface ClothDetail {
+  clothId: number;
+  imageUrl: string;
+  category: string;
+  memo?: string; 
+}
+
+interface DisplayData {
+  weather: { temp: number; isRaining: boolean };
+  items: {
+    outer?: ClothDetail;
+    top?: ClothDetail;
+    bottom?: ClothDetail;
+  };
+  comment: string;
+  isWarning: boolean;
+}
 
 const Home: React.FC = () => {
-  const navigate = useNavigate();
+  const [data, setData] = useState<DisplayData | null>(null);
 
-  const recommendations = [
-    { id: 1, name: '네이비 코트', category: '아우터', img: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=200&h=200&fit=crop' },
-    { id: 2, name: '화이트 셔츠', category: '상의', img: 'https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?w=200&h=200&fit=crop' },
-    { id: 3, name: '베이지 슬랙스', category: '하의', img: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=200&h=200&fit=crop' },
-    { id: 4, name: '브라운 로퍼', category: '신발', img: 'https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=200&h=200&fit=crop' },
-  ];
+  useEffect(() => {
+    const fetchRecommendation = async () => {
+      try {
+        // 1. 추천 리스트 받아오기
+        const response = await api.get<RecommendationResponse>('/api/wears/recommend');
+        console.log("1차 응답(IDs):", response.data);
+
+        // 🚨 [수정 포인트] response.data.success 체크 제거!
+        // 데이터가 잘 왔는지(recommendations가 있는지)만 확인하면 됩니다.
+        const resData = response.data;
+
+        if (resData && resData.recommendations && resData.recommendations.length > 0) {
+          
+          const bestSet = resData.recommendations[0]; 
+
+          // clothIds가 없거나 비어있으면 중단
+          if (!bestSet.clothIds || bestSet.clothIds.length === 0) {
+             console.log("추천된 옷 ID가 없습니다.");
+             // 빈 데이터라도 띄우려면 여기서 처리가 필요하지만, 일단 리턴
+             return;
+          }
+
+          // 2. 상세 정보 요청 (병렬 처리)
+          const detailPromises = bestSet.clothIds.map(async (id) => {
+            try {
+              const detailRes = await api.get(`/api/closet/${id}`);
+              
+              // [안전 장치] 응답 구조가 'data' 포장지가 있든 없든 처리
+              if (detailRes.data && detailRes.data.data) {
+                return detailRes.data.data as ClothDetail;
+              } else if (detailRes.data) {
+                return detailRes.data as ClothDetail;
+              }
+              return null;
+            } catch (err) {
+              console.error(`옷 정보 로딩 실패 (ID: ${id})`, err);
+              return null;
+            }
+          });
+
+          const clothDetails = (await Promise.all(detailPromises)).filter((item): item is ClothDetail => item !== null);
+          console.log("2차 응답(상세정보):", clothDetails);
+
+          // 3. 카테고리별 분류
+          const outer = clothDetails.find(item => item.category?.toUpperCase() === 'OUTER');
+          
+          const top = clothDetails.find(item => {
+             const cat = item.category?.toUpperCase();
+             return cat === 'TOP' || cat === 'DRESS' || cat === 'ONEPIECE';
+          });
+          
+          const bottom = clothDetails.find(item => item.category?.toUpperCase() === 'BOTTOM');
+
+          // 4. 코멘트 설정
+          let comment = "맑은 날씨에 적합한 조합입니다";
+          let isWarning = false;
+
+          if (bestSet.warnings && bestSet.warnings.length > 0) {
+            comment = bestSet.warnings[0];
+            isWarning = true;
+          } else if (resData.isRaining) {
+            comment = "비가 오니 젖어도 괜찮은 옷을 추천해요 ☔️";
+          }
+
+          // 최종 데이터 세팅 (이게 실행돼야 로딩이 끝남!)
+          setData({
+            weather: { temp: resData.temperature, isRaining: resData.isRaining },
+            items: { outer, top, bottom },
+            comment,
+            isWarning
+          });
+        } else {
+            console.log("추천 데이터가 비어있습니다.");
+        }
+      } catch (error) {
+        console.error("전체 로딩 실패:", error);
+      }
+    };
+
+    fetchRecommendation();
+  }, []);
+
+  if (!data) return <div className="min-h-screen flex justify-center items-center">로딩 중...</div>;
+
+  const PLACEHOLDER_IMG = "https://via.placeholder.com/300?text=No+Image";
 
   return (
-    <div className="flex flex-col gap-8 p-6 bg-white">
-      
-      {/* 헤더 & 날씨 섹션 */}
-      <header className="flex justify-between items-start">
+    <div className="flex flex-col gap-2 p-4 bg-white min-h-screen pb-24">
+      {/* 헤더 */}
+      <header className="flex justify-between items-end pt-1">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">오늘의 추천 스타일</h1>
-          <p className="text-sm font-medium text-gray-500 mt-1">겨울 시즌</p>
+          <p className="text-xs font-bold text-gray-500 mb-0.5">오늘의 날씨</p>
+          <h1 className="text-xl font-bold text-gray-900 leading-tight">오늘의 추천 스타일</h1>
         </div>
-        <div className="flex flex-col items-center bg-yellow-50 px-3 py-2 rounded-xl">
-          <Sun className="text-yellow-500 fill-yellow-500" size={24} />
-          <span className="text-xs font-bold text-gray-700 mt-1">5°C</span>
+        <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-full border border-yellow-100">
+           {data.weather.isRaining ? <CloudRain size={18} className="text-blue-500"/> : <Sun className="text-yellow-500 fill-yellow-500" size={18} />}
+          <span className="text-sm font-bold text-gray-800">{data.weather.temp}°C</span>
         </div>
       </header>
 
-      {/* 추천 스타일 슬라이더 */}
-      <section>
-        <div className="flex gap-3 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide snap-x">
-          {recommendations.map((item) => (
-            <div key={item.id} className="snap-center min-w-[140px] flex flex-col gap-2">
-              <div className="aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm relative group">
-                <img src={item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{item.category}</span>
-                <p className="text-sm font-bold text-gray-800">{item.name}</p>
-              </div>
+      {/* 추천 스타일 */}
+      <section className='flex flex-col gap-3'>
+        <div className="grid grid-cols-2 gap-3 w-full h-[420px]">
+          
+          {/* 아우터 */}
+          <div className="col-span-1 h-full relative rounded-2xl overflow-hidden shadow-sm bg-gray-100 group">
+            {data.items.outer ? (
+                <>
+                <img src={data.items.outer.imageUrl || PLACEHOLDER_IMG} alt="Outer" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute bottom-3 left-3 text-white">
+                    <span className="text-[10px] font-medium opacity-90 block mb-0.5">아우터</span>
+                    <p className="text-sm font-bold">{data.items.outer.memo || "아우터"}</p>
+                </div>
+                </>
+            ) : <div className="flex items-center justify-center h-full text-xs text-gray-400">아우터 없음</div>}
+          </div>
+
+          <div className="col-span-1 flex flex-col gap-3 h-full">
+            {/* 상의 */}
+            <div className="flex-1 relative rounded-2xl overflow-hidden shadow-sm bg-gray-100">
+               {data.items.top ? (
+                <>
+                <img src={data.items.top.imageUrl || PLACEHOLDER_IMG} alt="Top" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute bottom-3 left-3 text-white">
+                    <span className="text-[10px] font-medium opacity-90 block">
+                        {data.items.top.category === 'DRESS' ? '원피스' : '상의'}
+                    </span>
+                    <p className="text-sm font-bold truncate">{data.items.top.memo || "상의"}</p>
+                </div>
+                </>
+               ) : <div className="flex items-center justify-center h-full text-xs text-gray-400">상의 없음</div>}
             </div>
-          ))}
+
+            {/* 하의 */}
+            <div className="flex-1 relative rounded-2xl overflow-hidden shadow-sm bg-gray-100">
+                {data.items.bottom ? (
+                <>
+                <img src={data.items.bottom.imageUrl || PLACEHOLDER_IMG} alt="Bottom" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute bottom-3 left-3 text-white">
+                    <span className="text-[10px] font-medium opacity-90 block">하의</span>
+                    <p className="text-sm font-bold truncate">{data.items.bottom.memo || "하의"}</p>
+                </div>
+                </>
+                ) : <div className="flex items-center justify-center h-full text-xs text-gray-400">하의 없음</div>}
+            </div>
+          </div>
         </div>
         
-        {/* 날씨 코멘트 배너 */}
-        <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center justify-center gap-2 text-blue-600 shadow-sm">
-          <Sparkles size={16} className="fill-blue-200" />
-          <span className="text-xs font-bold">맑은 날씨에 적합한 조합입니다</span>
+        {/* 코멘트 */}
+        <div className={`border rounded-xl p-2.5 flex items-center justify-center gap-2 shadow-sm ${
+            data.isWarning ? 'bg-orange-50 border-orange-100 text-orange-600' : 'bg-blue-50 border-blue-100 text-blue-600'
+        }`}>
+          {data.isWarning ? <AlertCircle size={14} /> : <Sparkles size={14} />}
+          <span className="text-xs font-bold">{data.comment}</span>
         </div>
       </section>
-
-      {/* 퀵 메뉴 (옷장 / 캘린더) */}
-      <section className="grid grid-cols-2 gap-4">
-        {/* 옷장 바로가기 */}
-        <button 
-          onClick={() => navigate('/closet')}
-          className="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm text-left group hover:border-blue-200 transition-all relative overflow-hidden"
-        >
-          <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center text-white mb-3 shadow-md group-hover:scale-110 transition-transform">
-            <Shirt size={20} fill="currentColor" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">옷장</h3>
-          <p className="text-xs text-gray-400 mt-1">내 옷들을 관리하세요</p>
-          <div className="mt-4 flex items-center text-xs font-bold text-gray-300 group-hover:text-pink-500 transition-colors">
-            바로가기 <ChevronRight size={14} />
-          </div>
-        </button>
-
-        {/* 캘린더 바로가기 */}
-        <button 
-          onClick={() => navigate('/calendar')} // 추후 캘린더 페이지 생성 필요
-          className="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm text-left group hover:border-green-200 transition-all relative overflow-hidden"
-        >
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl flex items-center justify-center text-white mb-3 shadow-md group-hover:scale-110 transition-transform">
-            <Calendar size={20} fill="currentColor" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">캘린더</h3>
-          <p className="text-xs text-gray-400 mt-1">스타일 일정을 확인하세요</p>
-          <div className="mt-4 flex items-center text-xs font-bold text-gray-300 group-hover:text-green-500 transition-colors">
-            바로가기 <ChevronRight size={14} />
-          </div>
-        </button>
-      </section>
-
-      {/* 통계 */}
-      <section className="border border-gray-100 rounded-[24px] p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">이번 주 통계</h3>
-        <div className="flex justify-between items-center">
-          <StatItem value={18} label="깨끗한 옷" color="text-green-500" />
-          <div className="w-[1px] h-8 bg-gray-100"></div>
-          <StatItem value={6} label="빨래중인 옷" color="text-orange-500" />
-          <div className="w-[1px] h-8 bg-gray-100"></div>
-          <StatItem value={5} label="이번 주 착용" color="text-purple-500" />
-        </div>
-      </section>
-
-      {/* 최근 활동 */}
-      <section className="border border-gray-100 rounded-[24px] p-6 shadow-sm mb-4">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">최근 활동</h3>
-        <div className="flex flex-col gap-0">
-          <ActivityItem 
-            text="네이비 코트 착용" date="오늘" 
-            dotColor="bg-blue-500" isLast={false} 
-          />
-          <ActivityItem 
-            text="그레이 가디건 세탁 완료" date="어제" 
-            dotColor="bg-green-500" isLast={false} 
-          />
-          <ActivityItem 
-            text="새 옷 3벌 추가" date="3일 전" 
-            dotColor="bg-purple-500" isLast={true} 
-          />
-        </div>
+      
+      {/* 통계 섹션 (유지) */}
+      <section className="border border-gray-100 rounded-[20px] p-5 shadow-sm mt-auto">
+         <h3 className="text-base font-bold text-gray-900 mb-2">이번 주 통계</h3>
+         <div className="text-center text-sm text-gray-400 py-4">데이터 준비 중...</div>
       </section>
     </div>
   );
 };
-
-const StatItem = ({ value, label, color }: { value: number, label: string, color: string }) => (
-  <div className="flex flex-col items-center gap-1 flex-1">
-    <span className={`text-2xl font-black ${color}`}>{value}</span>
-    <span className="text-[11px] font-bold text-gray-400">{label}</span>
-  </div>
-);
-
-const ActivityItem = ({ text, date, dotColor, isLast }: { text: string, date: string, dotColor: string, isLast: boolean }) => (
-  <div className="flex gap-4 relative pb-8 last:pb-0">
-    {/* 타임라인 라인 */}
-    {!isLast && <div className="absolute left-[5px] top-2 bottom-0 w-[2px] bg-gray-100"></div>}
-    
-    {/* 도트 */}
-    <div className={`relative z-10 w-3 h-3 rounded-full border-2 border-white shadow-sm shrink-0 ${dotColor}`}></div>
-    
-    {/* 텍스트 */}
-    <div className="-mt-1.5">
-      <p className="text-sm font-bold text-gray-800">{text}</p>
-      <span className="text-xs font-medium text-gray-400">{date}</span>
-    </div>
-  </div>
-);
 
 export default Home;

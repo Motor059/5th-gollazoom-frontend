@@ -4,6 +4,8 @@ import SignupPage from './pages/Signup';
 import DeleteuserPage from './pages/Deleteuser';
 import ChangePw from './pages/Changepw';
 import Home from './pages/Home';
+import Worktime from './pages/Worktime';
+
 import Closet from './pages/closet/Closet';
 import AddClothes from './pages/closet/AddClothes';
 import AllClothes from './pages/closet/AllClothes';
@@ -17,6 +19,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/change-password" element={<ChangePw />} />
+      <Route path="/worktime" element={<Worktime />} />
 
       <Route element={<ClosetLayout />}>
         <Route path="/" element={<Home />} />

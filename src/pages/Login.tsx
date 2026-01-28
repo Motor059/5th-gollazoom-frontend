@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { login } from "../api/users";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
     const [formData, setFormData] = useState({
         username: "",
         password: "",
-        name: "",
     });
     const navigate = useNavigate();
+    const location = useLocation();
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({
+        setFormData({ // 다른 필드 유지하면서 변경된 필드만 업데이트
             ...formData,
             [e.target.name]: e.target.value,
         });
@@ -24,7 +24,13 @@ const LoginPage = () => {
             localStorage.setItem('accessToken', data.accessToken);
             localStorage.setItem('refreshToken', data.refreshToken);
             alert("로그인 성공");
-            navigate("/deleteuser");
+            const isNewUser = location.state?.isNewUser;
+            if (isNewUser) {
+                alert("환영합니다! 출근 시간을 설정해주세요.");
+                navigate("/worktime");
+                return;
+            }
+            navigate("/");
             } catch (error) {
             console.error("Login failed:", error);
             alert("아이디 비밀번호를 다시 확인하세요");

@@ -26,7 +26,7 @@ const SignupPage = () => {
             localStorage.setItem('id', data.id);
             localStorage.setItem('username', data.username);
             localStorage.setItem('name', data.nickname);
-            navigate("/login");
+            navigate("/login", {state: {isNewUser: true}});
         } catch (error) {
             console.error("Signup failed:", error);
             alert("회원가입에 실패하였습니다. 다시 시도해주세요.");
