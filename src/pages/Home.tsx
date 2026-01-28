@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Sun, Sparkles, CloudRain, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
 
-// [1] 인터페이스 수정: success 필드 제거, 바로 데이터가 오는 구조로 변경
 interface RecommendationSet {
   type: string;
   score: number;
   warnings: string[];
   clothIds: number[]; 
 }
-
-// 응답 자체가 바로 데이터임
 interface RecommendationResponse {
   date: string;
   isRaining: boolean;
@@ -42,31 +39,24 @@ const Home: React.FC = () => {
   useEffect(() => {
     const fetchRecommendation = async () => {
       try {
-        // 1. 추천 리스트 받아오기
         const response = await api.get<RecommendationResponse>('/api/wears/recommend');
-        console.log("1차 응답(IDs):", response.data);
-
-        // 🚨 [수정 포인트] response.data.success 체크 제거!
-        // 데이터가 잘 왔는지(recommendations가 있는지)만 확인하면 됩니다.
+        console.log("response 데이터:", response.data);
         const resData = response.data;
 
         if (resData && resData.recommendations && resData.recommendations.length > 0) {
           
           const bestSet = resData.recommendations[0]; 
 
-          // clothIds가 없거나 비어있으면 중단
           if (!bestSet.clothIds || bestSet.clothIds.length === 0) {
              console.log("추천된 옷 ID가 없습니다.");
-             // 빈 데이터라도 띄우려면 여기서 처리가 필요하지만, 일단 리턴
              return;
           }
 
-          // 2. 상세 정보 요청 (병렬 처리)
           const detailPromises = bestSet.clothIds.map(async (id) => {
             try {
               const detailRes = await api.get(`/api/closet/${id}`);
               
-              // [안전 장치] 응답 구조가 'data' 포장지가 있든 없든 처리
+              // 응답 안전 처리
               if (detailRes.data && detailRes.data.data) {
                 return detailRes.data.data as ClothDetail;
               } else if (detailRes.data) {
@@ -82,7 +72,7 @@ const Home: React.FC = () => {
           const clothDetails = (await Promise.all(detailPromises)).filter((item): item is ClothDetail => item !== null);
           console.log("2차 응답(상세정보):", clothDetails);
 
-          // 3. 카테고리별 분류
+          // 카테고리별 분류
           const outer = clothDetails.find(item => item.category?.toUpperCase() === 'OUTER');
           
           const top = clothDetails.find(item => {
@@ -92,7 +82,7 @@ const Home: React.FC = () => {
           
           const bottom = clothDetails.find(item => item.category?.toUpperCase() === 'BOTTOM');
 
-          // 4. 코멘트 설정
+          // 코멘트 설정
           let comment = "맑은 날씨에 적합한 조합입니다";
           let isWarning = false;
 
@@ -103,7 +93,7 @@ const Home: React.FC = () => {
             comment = "비가 오니 젖어도 괜찮은 옷을 추천해요 ☔️";
           }
 
-          // 최종 데이터 세팅 (이게 실행돼야 로딩이 끝남!)
+          // 최종 데이터 세팅
           setData({
             weather: { temp: resData.temperature, isRaining: resData.isRaining },
             items: { outer, top, bottom },
@@ -199,7 +189,7 @@ const Home: React.FC = () => {
         </div>
       </section>
       
-      {/* 통계 섹션 (유지) */}
+      {/* 이번 주 통계 */}
       <section className="border border-gray-100 rounded-[20px] p-5 shadow-sm mt-auto">
          <h3 className="text-base font-bold text-gray-900 mb-2">이번 주 통계</h3>
          <div className="text-center text-sm text-gray-400 py-4">데이터 준비 중...</div>

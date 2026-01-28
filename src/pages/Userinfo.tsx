@@ -2,7 +2,7 @@ import { deleteUser, getUserInfo } from "../api/users";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 
-const DeleteUserPage = () => {
+const UserInfo = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState({
         username: "",
@@ -150,4 +150,4 @@ const DeleteUserPage = () => {
   )
 }
 
-export default DeleteUserPage;
+export default UserInfo;
