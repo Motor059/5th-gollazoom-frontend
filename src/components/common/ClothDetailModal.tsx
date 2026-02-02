@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { CATEGORY_OPTIONS, SEASON_OPTIONS, type Option } from '../data/constants';
-import { deleteCloth } from '../api/closet';
+import { CATEGORY_OPTIONS, SEASON_OPTIONS, type Option } from '../../data/constants';
+import { deleteCloth, updateCloth, type UpdateClothRequest } from '../../api/closet';
+import ClothItem from '../../components/common/ClothItem';
 
 export interface ClothData {
   clothId: number | string;
   imageUrl: string;
   category: string;
   season: string;
-  rainOk: boolean;
+  isRaining: boolean;
   memo?: string;
+  color?: string;        
+  subCategory?: string;  
+  colorCode?: string;
 }
 
 interface ClothDetailModalProps {
@@ -20,7 +24,7 @@ interface ClothDetailModalProps {
 const ClothDetailModal = ({ data, onClose, onRefresh }: ClothDetailModalProps) => {
   const [category, setCategory] = useState(data.category);
   const [season, setSeason] = useState(data.season);
-  const [rainOk, setRainOk] = useState(data.rainOk);
+  const [isRaining, setIsRaining] = useState(data.isRaining);
   const [memo, setMemo] = useState(data.memo || '');
 
   const handleDelete = async () => {
@@ -37,6 +41,49 @@ const ClothDetailModal = ({ data, onClose, onRefresh }: ClothDetailModalProps) =
     }
   };
 
+  const handleUpdate = async () => {
+    try {
+      // 1. 퀵등록 여부 확인 (URL 패턴으로 판단)
+      const isQuickAdd = data.imageUrl.includes('quickupload');
+      
+      let updateData: FormData | UpdateClothRequest;
+
+      if (isQuickAdd) {
+        // 2-1. 퀵등록 수정 데이터 구성 (JSON)
+        updateData = {
+          category,
+          season,
+          color: data.color || "", // 기존 color 유지 혹은 선택 기능 추가 필요
+          memo,
+          imageUrl: data.imageUrl, // 기존 퀵등록 URL 유지
+          subCategory: data.subCategory || "",
+          colorCode: data.colorCode || "",
+          isRaining,
+        };
+      } else {
+        // 2-2. 일반 사진 수정 데이터 구성
+        const formData = new FormData();
+        formData.append('category', category);
+        formData.append('season', season);
+        // formData.append('season', selectedSeasons.join(','));
+        // formData.append('color', selectedColors.join(','));
+        formData.append('isRaining', String(isRaining));
+        formData.append('memo', memo);
+        formData.append('subCategory', ""); // 추가
+        formData.append('colorCode', "");   // 추가
+        updateData = formData;
+      }
+
+      await updateCloth(String(data.clothId), updateData);
+      alert("의상 정보가 수정되었습니다.");
+      onRefresh();
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert("수정에 실패했습니다.");
+    }
+  };
+
   return (
     // 배경 오버레이: 고정 위치, 검은색 반투명, 중앙 정렬
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100]">
@@ -47,8 +94,11 @@ const ClothDetailModal = ({ data, onClose, onRefresh }: ClothDetailModalProps) =
           <button onClick={onClose} className="text-2xl leading-none">&times;</button>
         </div>
 
-        {/* 이미지: 1:1 비율, 채우기, 둥근 모서리 */}
-        <img src={data.imageUrl} className="w-full aspect-square object-cover rounded-2xl mb-4" alt="옷 사진" />
+        
+        {/* 모달 내부 이미지 부분 수정 */}
+        <div className="w-full aspect-square mb-4 bg-gray-50 rounded-2xl overflow-hidden shadow-inner">
+          <ClothItem item={data} />
+        </div>
 
         <div className="space-y-4">
           <div className="flex flex-col gap-1.5">
@@ -81,11 +131,11 @@ const ClothDetailModal = ({ data, onClose, onRefresh }: ClothDetailModalProps) =
             <label className="text-sm font-semibold text-gray-600">비 선호도</label>
             <div className="flex gap-4 mt-1">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={rainOk} onChange={() => setRainOk(true)} className="w-4 h-4" /> 
+                <input type="radio" checked={isRaining} onChange={() => setIsRaining(true)} className="w-4 h-4" /> 
                 <span className="text-sm">예</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={!rainOk} onChange={() => setRainOk(false)} className="w-4 h-4" /> 
+                <input type="radio" checked={!isRaining} onChange={() => setIsRaining(false)} className="w-4 h-4" /> 
                 <span className="text-sm">아니오</span>
               </label>
             </div>
@@ -110,7 +160,8 @@ const ClothDetailModal = ({ data, onClose, onRefresh }: ClothDetailModalProps) =
           >
             삭제하기
           </button>
-          <button 
+          <button
+            onClick={handleUpdate} 
             className="flex-[1.5] p-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 shadow-md transition-colors"
           >
             수정 완료

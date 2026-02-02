@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATEGORY_OPTIONS, type Option } from '../../data/constants';
-import ClothDetailModal from '../../components/ClothDetailModal';
+import ClothDetailModal from '../../components/common/ClothDetailModal';
 import { getClothes, getClothDetail } from '../../api/closet';
+import ClothItem from '../../components/common/ClothItem';
 
 interface Cloth {
   clothId: string;
   imageUrl: string;
   category: string;
   season: string;
-  rainOk: boolean;
+  isRaining: boolean;
   memo?: string;
+  color?: string;      // 상세 조회를 위해 추가
+  subCategory?: string; // 상세 조회를 위해 추가
 }
 
 const AllClothes = () => {
@@ -26,11 +29,8 @@ const AllClothes = () => {
       const response = await getClothes({ page: 0, size: 20 });
       console.log("서버 응답 전체 데이터:", response);
       
-      if (Array.isArray(response)) {
-        setClothesData(response);
-      }
-      else if (response && Array.isArray(response.data)) {
-        setClothesData(response.data);
+      if (response && response.data && Array.isArray(response.data.items)) {
+        setClothesData(response.data.items); // 3. 데이터 경로 수정
       }
     } catch (error) {
       console.error("의상 목록 로드 실패:", error);
@@ -90,7 +90,7 @@ const AllClothes = () => {
             onClick={() => handleItemClick(item.clothId)}
             className="aspect-square rounded-xl border border-gray-100 bg-gray-50 overflow-hidden cursor-pointer active:opacity-70 transition-opacity shadow-sm"
           >
-            <img src={item.imageUrl} className="w-full h-full object-cover" alt="clothes" />
+            <ClothItem item={item} />
           </div>
         ))}
       </div>
