@@ -3,18 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import clothes from '../../assets/icons/clothes.png';
 import { CATEGORY_OPTIONS, TAG_OPTIONS, SEASON_OPTIONS, type Option } from '../../data/constants';
 // import { MOCK_CLOTHES } from '../../mocks/mockData';
+import ClothItem from '../../components/common/ClothItem';
+import api from '../../api/axios';
 
-interface ClothItem {
-  id: string | number; 
+interface Cloth {
+  clothId: string | number; // 서버가 주는 필드명
   imageUrl: string;
+  category: string;
+  subCategory?: string;
+  color?: string;
 }
 
 interface SelectedItems {
-  [key: string]: ClothItem | null;
-  TOP: ClothItem | null;
-  BOTTOM: ClothItem | null;
-  DRESS: ClothItem | null;
-  OUTER: ClothItem | null;
+  [key: string]: Cloth | null;
+  TOP: Cloth | null;
+  BOTTOM: Cloth | null;
+  DRESS: Cloth | null;
+  OUTER: Cloth | null;
 }
 
 const CoordiSave = () => {
@@ -40,8 +45,8 @@ const CoordiSave = () => {
         const response = await fetch('http://192.168.158.60:8080/api/clothes', { // 실제 의상 API 주소 확인 필요
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.json();
-        setServerClothes(data.items); // 받아온 의상들을 상태에 저장
+        const result = await response.json();
+        setServerClothes(result.data.items || []);
       } catch (e) {
         console.error("의상 목록 로드 실패:", e);
       }
@@ -61,6 +66,7 @@ const CoordiSave = () => {
   //   );
   // };
 
+  // selectedItems 구조가 변경으로 인한 내용 수정
   const handleSaveCoordi = async () => {
     // selectedItems의 value들 중 null이 아닌 것이 하나라도 있는지 체크.
     const hasSelectedItems = Object.values(selectedItems).some(item => item !== null);
@@ -90,33 +96,27 @@ const CoordiSave = () => {
     const editId = new URLSearchParams(window.location.search).get('edit'); // 수정 모드 확인
 
     // 명세서 기반 데이터 구조 생성
-  const coordiData = {
-    name: coordiName,
-    topClothId: String(selectedItems.TOP?.id || ""), 
-    bottomClothId: String(selectedItems.BOTTOM?.id || ""),
-    dressClothId: String(selectedItems.DRESS?.id || ""),
-    outerClothId: String(selectedItems.OUTER?.id || "")
-  };
+    const coordiData = {
+      name: coordiName,
+      topClothId: String(selectedItems.TOP?.clothId || ""), 
+      bottomClothId: String(selectedItems.BOTTOM?.clothId || ""),
+      dressClothId: String(selectedItems.DRESS?.clothId || ""),
+      outerClothId: String(selectedItems.OUTER?.clothId || "")
+    };
 
     try {
-      const url = editId ? `http://192.168.158.60:8080/api/presets/${editId}` : 'http://192.168.158.60:8080/api/presets';
-      const response = await fetch(url, {
-      method: editId ? 'PATCH' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(coordiData)
-      }
-    );
+      const url = editId ? `/api/presets/${editId}` : '/api/presets';
+      const method = editId ? 'patch' : 'post';
 
-    if (response.ok) {
+      const response = await api[method](url, coordiData);
+
+    if (response.status === 200 || response.status === 201) {
       alert(editId ? "코디가 수정되었습니다." : "새 코디가 저장되었습니다.");
       navigate('/closet'); 
     }
-  } catch (e) {
-    console.error("저장 중 에러 발생:", e);
-  }
+    } catch (e) {
+      console.error("저장 중 에러 발생:", e);
+    }
   };
 
   return (
@@ -127,7 +127,7 @@ const CoordiSave = () => {
       </div>
 
       <div className="flex-1 p-8 flex flex-col items-center">
-        {/* 코디 이름 입력 필드 추가 */}
+        {/* 코디 이름 입력 필드 */}
         <div className="w-full max-w-[320px]">
           <label className="block text-sm font-bold text-gray-500 mb-2">코디 이름</label>
           <input 
@@ -151,10 +151,8 @@ const CoordiSave = () => {
               className="w-full aspect-square border-2 border-dashed border-gray-200 rounded-[30px] flex flex-col items-center justify-center bg-[#F8FAFC] cursor-pointer active:bg-gray-100"
             >
               {selectedItems[slot.key] ? (
-                <img 
-                  src={selectedItems[slot.key]?.imageUrl} 
-                  className="w-full h-full object-cover rounded-[28px]" 
-                  alt={slot.label} 
+                <ClothItem item={selectedItems[slot.key]!} 
+                  className="w-full h-full rounded-[28px]" 
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center">
@@ -248,13 +246,15 @@ const CoordiSave = () => {
                     onClick={() => {
                       setSelectedItems(prev => ({ 
                         ...prev, 
-                        [item.category]: { id: item.clothId, imageUrl: item.imageUrl } 
+                        // item 객체 전체를 저장해야 ClothItem에서 category, color 등을 참조할 수 있음
+                        [item.category]: item 
                       }))
                       setIsModalOpen(false); // 선택 후 모달 닫기
                     }}
                     className="aspect-square rounded-xl overflow-hidden border border-gray-100 cursor-pointer active:scale-95"
                   >
-                    <img src={item.imageUrl} className="w-full h-full object-cover" alt="clothes" />
+                    {/* 랜더링 수정 */}
+                    <ClothItem item={item} /> 
                   </div>
                 ))}
               {/* 해당 카테고리에 옷이 없을 때 */}
