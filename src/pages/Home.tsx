@@ -110,7 +110,7 @@ const Home: React.FC = () => {
   }, []);
 
   if (!data) return <div className="min-h-screen flex justify-center items-center">로딩 중...</div>;
-
+  
   const PLACEHOLDER_IMG = "https://via.placeholder.com/300?text=No+Image";
 
   return (
