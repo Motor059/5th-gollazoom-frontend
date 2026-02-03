@@ -74,12 +74,10 @@ const Home: React.FC = () => {
 
           // 카테고리별 분류
           const outer = clothDetails.find(item => item.category?.toUpperCase() === 'OUTER');
-          
           const top = clothDetails.find(item => {
              const cat = item.category?.toUpperCase();
-             return cat === 'TOP' || cat === 'DRESS' || cat === 'ONEPIECE';
+             return cat === 'TOP' || cat === 'DRESS';
           });
-          
           const bottom = clothDetails.find(item => item.category?.toUpperCase() === 'BOTTOM');
 
           // 코멘트 설정
