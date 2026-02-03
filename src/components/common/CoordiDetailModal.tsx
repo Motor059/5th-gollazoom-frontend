@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ClothItem from './ClothItem';
 
-// API 연동 시 사용할 인터페이스 (명세서 기반)
-interface ClothItem {
-  slot: string; // "TOP", "BOTTOM" 등
+// 인터페이스 이름을 'CoordiClothData'로 변경하여 충돌 피함.
+interface CoordiClothData {
+  slot: string;
   clothId: number;
   imageUrl: string;
   category: string;
+  subCategory?: string; // 퀵등록 아이콘 대응을 위해 추가 추천
+  color?: string;       // 퀵등록 아이콘 대응을 위해 추가 추천
   season: string;
   isRaining: boolean;
 }
@@ -14,7 +17,7 @@ interface ClothItem {
 export interface CoordiData {
   presetId: string | number; 
   name: string; 
-  items: ClothItem[]; 
+  items: CoordiClothData[]; 
 }
 
 interface CoordiDetailModalProps {
@@ -27,9 +30,9 @@ const CoordiDetailModal = ({ data, onClose, onRefresh }: CoordiDetailModalProps)
   const navigate = useNavigate();
   const [name, setName] = useState(data.name);
 
-    // 슬롯별로 이미지를 찾기 위한 헬퍼 함수
-  const getImgBySlot = (slot: string) => data.items.find(item => item.slot === slot)?.imageUrl || '';
-
+  // 헬퍼 함수 수정: URL 문자열 대신 아이템 객체 자체를 찾음
+  const getItemBySlot = (slot: string) => data.items.find(item => item.slot === slot);
+ 
   const handleDelete = async () => {
     if (!window.confirm("정말 이 코디를 삭제할까요?")) return;
     try {
@@ -92,12 +95,23 @@ const CoordiDetailModal = ({ data, onClose, onRefresh }: CoordiDetailModalProps)
           <button onClick={onClose} className="text-2xl leading-none">&times;</button>
         </div>
 
-        {/* 2*2 이미지 배치 UI [사용자 의도 반영] */}
+        {/* 2*2 이미지 배치 UI */}
         <div className="grid grid-cols-2 gap-1 aspect-square rounded-2xl overflow-hidden bg-gray-100 mb-4 border border-gray-200">
-          <div className="bg-white"><img src={getImgBySlot('TOP')} className="w-full h-full object-cover" alt="상의" /></div>
-          <div className="bg-white"><img src={getImgBySlot('BOTTOM')} className="w-full h-full object-cover" alt="하의" /></div>
-          <div className="bg-white"><img src={getImgBySlot('DRESS')} className="w-full h-full object-cover" alt="원피스" /></div>
-          <div className="bg-white"><img src={getImgBySlot('OUTER')} className="w-full h-full object-cover" alt="아우터" /></div>
+          {['TOP', 'BOTTOM', 'DRESS', 'OUTER'].map(slot => {
+              const item = getItemBySlot(slot); // 수정된 헬퍼 함수 사용
+              return (
+                <div key={slot} className="bg-white">
+                  {item ? (
+                    // 이미지 태그 대신 ClothItem으로 교체
+                    <ClothItem item={item} />
+                  ) : (
+                    <div className="w-full h-full bg-gray-50 flex items-center justify-center text-[10px] text-gray-300">
+                      EMPTY
+                    </div>
+                  )}
+              </div>
+            );
+          })}
         </div>
 
         <div className="flex flex-col gap-1.5 mb-6">

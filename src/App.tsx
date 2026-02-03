@@ -13,6 +13,8 @@ import CoordiSave from './pages/closet/CoordiSave';
 import AllCoordi from './pages/closet/AllCoordi';
 import CalendarPage from './pages/calendar/CalendarPage';
 import ClosetLayout from './layouts/Closetlayout';
+import QuickAdd from './components/addClothes/QuickAdd';
+import UploadDetail from './components/addClothes/UploadDetail';
 
 function App() {
   return (
@@ -27,6 +29,9 @@ function App() {
         <Route path="/userinfo" element={<UserInfo />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/closet" element={<Closet />} />
+        {/* 추가 */}
+        <Route path="/closet/quick-add" element={<QuickAdd />} />
+         <Route path="/closet/add/detail" element={<UploadDetail />} />
         <Route path="/closet/all" element={<AllClothes />} />
         <Route path="/closet/add" element={<AddClothes />} />
         <Route path="/coordi/save" element={<CoordiSave />} />
