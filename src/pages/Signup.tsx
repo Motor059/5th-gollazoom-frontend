@@ -51,7 +51,7 @@ const SignupPage = () => {
               />
               <button 
               className="text-sm border border-gray-300 text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={() => alert('추후 구현 예정 기능입니다.')}
+              onClick={() => alert('추후 구현 예정 기능입니다.')} // 이거 나중에 API 연동되면 수정
               >
               중복확인
               </button>

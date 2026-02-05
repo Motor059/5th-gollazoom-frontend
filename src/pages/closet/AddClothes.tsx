@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import album from '../../assets/icons/album.png';
 import camera from '../../assets/icons/camera.png';
