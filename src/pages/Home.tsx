@@ -32,7 +32,8 @@ interface DisplayData {
   comment: string;
   isWarning: boolean;
 }
-
+// 홈 화면에는 본인이 선택한 코디가 나오도록 하고 나중에 30분 전에도 설정 안돼있으면
+// 강제로 의상 추천을 해주는 방식으로 변경 필요
 const Home: React.FC = () => {
   const [data, setData] = useState<DisplayData | null>(null);
 

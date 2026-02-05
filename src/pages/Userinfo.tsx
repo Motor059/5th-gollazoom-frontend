@@ -8,7 +8,7 @@ const UserInfo = () => {
         username: "",
         nickname: "",
         worktime: "",
-        //savedTime: ""
+        //savedTime: "" 시간 남으면 구현
     });
 
     useEffect(() => {
@@ -22,6 +22,13 @@ const UserInfo = () => {
         };
         fetchUserInfo();
     }, []);
+
+    {/* 로그아웃 추가 */}
+    const handleLogout = () => {
+        localStorage.clear(); 
+        alert("로그아웃 되었습니다.");
+        navigate("/login"); 
+    };
 
     const handleDelete = async () => {
         if (!window.confirm("정말로 회원탈퇴를 진행하시겠습니까?")) return;
@@ -71,7 +78,7 @@ const UserInfo = () => {
             {/* 닉네임 변경 버튼 */}
             <button 
               className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={() => alert('추후 구현 예정 기능입니다.')}
+              onClick={() => alert('추후 구현 예정 기능입니다.')} // 추후 API 나올 때 수정
             >
               변경
             </button>
@@ -143,6 +150,12 @@ const UserInfo = () => {
             className="w-full py-2.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 font-medium transition text-sm"
           >
             회원 탈퇴하기
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full py-2.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 font-medium transition text-sm"
+          >
+            로그아웃
           </button>
         </div>
       </div>

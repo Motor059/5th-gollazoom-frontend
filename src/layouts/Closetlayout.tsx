@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import BottomNav from '../components/Home/Bottomnav';
+import BottomNav from '../components/home/Bottomnav';
 
 const ClosetLayout = () => {
   return (
