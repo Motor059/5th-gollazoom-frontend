@@ -4,6 +4,7 @@ import { CATEGORY_OPTIONS, type Option } from '../../data/constants';
 import ClothDetailModal from '../../components/common/ClothDetailModal';
 import { getClothes, getClothDetail } from '../../api/closet';
 import ClothItem from '../../components/common/ClothItem';
+import HelpIcon from '../../components/guide/HelpIcon'; 
 
 interface Cloth {
   clothId: string;
@@ -55,7 +56,9 @@ const AllClothes = () => {
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate('/closet')} className="text-2xl">←</button>
           <h3 className="text-xl font-bold">모든 의상</h3>
+          <HelpIcon /> {/* 설명 페이지 아이콘 배치 */}
         </div>
+
         <div className="flex flex-col gap-3">
           {CATEGORY_OPTIONS.map(opt => (
             <button 

@@ -5,7 +5,8 @@ interface ClothItemProps {
     imageUrl: string;  
     category?: string;     
     subCategory?: string;  
-    color?: string;        
+    color?: string;  
+    hasWashing?: boolean; //  세탁 상태 추가      
   };
   className?: string;      
 }
@@ -13,6 +14,19 @@ interface ClothItemProps {
 const ClothItem = ({ item, className = "w-full h-full" }: ClothItemProps) => {
   // 1. 퀵등록 여부 판단
   const isQuickAdd = item.imageUrl?.includes('quickupload');
+
+  // 세탁중 스타일 추가
+  const washingOverlay = item.hasWashing && (
+    <>
+    {/* 의상 이미지 테두리를 감싸는 빨간 라인 */}
+    <div className="absolute inset-0 border-[3px] border-red-500 rounded-[inherit] z-10 pointer-events-none" />
+      
+       {/* 세탁중 뱃지 */}
+      <div className="absolute bottom-1.5 right-1.5 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold z-20 shadow-md">
+         세탁중
+       </div>
+     </>
+   );
 
   if (isQuickAdd) {
     // 2. 퀵등록인 경우 URL에서 정보 추출하기
@@ -39,7 +53,7 @@ const ClothItem = ({ item, className = "w-full h-full" }: ClothItemProps) => {
     ).href;
 
     return (
-      <div className={`relative ${className}`}>
+      <div className={`relative overflow-hidden ${className}`}>
         {item.color === 'WHITE' && (
           <div 
             className="absolute inset-0 scale-[1.05]"
@@ -64,21 +78,27 @@ const ClothItem = ({ item, className = "w-full h-full" }: ClothItemProps) => {
             maskPosition: 'center',
           }}
         />
+        {/* 세탁 추가 */}
+        {washingOverlay}
       </div>
     );
   }
 
   // 3. 일반 사진인 경우
   return (
-    <img 
-      src={item.imageUrl} 
-      className={`object-cover ${className}`} 
-      alt="의상" 
-      onError={(e) => {
-        // 이미지 로드 실패 시 대체 이미지 처리 로직 추가 가능
-        e.currentTarget.src = '/path/to/default-image.png';
-      }}
-    />
+    <div className={`relative ${className}`}>
+      <img 
+        src={item.imageUrl} 
+        className={`object-cover ${className}`} 
+        alt="의상" 
+        onError={(e) => {
+          // 이미지 로드 실패 시 대체 이미지 처리 로직 추가 가능
+          e.currentTarget.src = '/path/to/default-image.png';
+        }}
+      />
+      {/* 세탁 추가 */}
+      {washingOverlay}
+    </div>
   );
 };
 
