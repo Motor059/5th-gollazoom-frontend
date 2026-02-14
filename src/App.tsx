@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Routes, Route} from 'react-router-dom';
-import LoginPage from './pages/Login';
-import SignupPage from './pages/Signup';
-import UserInfo from './pages/Userinfo';
-import ChangePw from './pages/Changepw';
+import { Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/setuser/Login';
+import SignupPage from './pages/setuser/Signup';
+import UserInfo from './pages/userinfo/Userinfo';
+import ChangePw from './pages/userinfo/Changepw';
 import Home from './pages/Home';
-import Worktime from './pages/Worktime';
-import { useWorktimeAlert } from './hooks/Worktimealert';
+import Worktime from './pages/setuser/Worktime';
+import useWorktimeAlert from './hooks/Worktimealert';
 import UrgentAlert from './components/modal/Urgentalert';
+import ChangeNickname from './pages/userinfo/Changenk';
+import ChangeWorktime from './pages/userinfo/Changewt';
 
 import Closet from './pages/closet/Closet';
 import AddClothes from './pages/closet/AddClothes';
@@ -34,6 +36,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/change-password" element={<ChangePw />} />
+        <Route path="/change-nickname" element={<ChangeNickname />} />
+        <Route path="/change-worktime" element={<ChangeWorktime />} />
         <Route path="/worktime" element={<Worktime />} />
 
        <Route element={<ClosetLayout />}>

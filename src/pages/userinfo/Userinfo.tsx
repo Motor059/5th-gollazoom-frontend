@@ -1,4 +1,4 @@
-import { deleteUser, getUserInfo } from "../api/users";
+import { deleteUser, getUserInfo } from "../../api/users";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 
@@ -78,7 +78,7 @@ const UserInfo = () => {
             {/* 닉네임 변경 버튼 */}
             <button 
               className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={() => alert('추후 구현 예정 기능입니다.')} // 추후 API 나올 때 수정
+              onClick={() => navigate('/change-nickname')}
             >
               변경
             </button>
@@ -116,7 +116,7 @@ const UserInfo = () => {
             {/* 출근 시간 변경 버튼 */}
             <button 
               className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={() => navigate('/worktime')}
+              onClick={() => navigate('/change-worktime')}
             >
               변경
             </button>
@@ -133,7 +133,7 @@ const UserInfo = () => {
               </div>
             </div>
             
-            {/* 닉네임 변경 버튼 */}
+            {/* 절약한 시간 확인 버튼 */}
             <button 
               className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
               onClick={() => alert('추후 구현 예정 기능입니다.')}
