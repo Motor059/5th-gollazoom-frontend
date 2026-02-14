@@ -41,7 +41,26 @@ export const getUserInfo = async () => {
     return response.data;
 }
 
-export const setWorkTime = async (time: string) => {
-    const response = await api.post('/users/worktime', { worktime: time });
+export const setWorkTime = async (worktime: string) => {
+    const response = await api.post('/users/time', { worktime });
     return response.data;
+}
+
+export const checkUsername = async (username: string) => {
+    const response = await api.get('/users/username', {
+        params: { 
+            username: username
+        }
+    });
+    return response.data;
+}
+
+export const changeNickname = async (nickname: string) => {
+  const response = await api.patch(`/users/nickname`, { nickname });
+  return response.data;
 };
+
+export const changeWorktime = async (worktime: string) => {
+    const response = await api.patch('/users/time', { worktime });
+    return response.data;
+}

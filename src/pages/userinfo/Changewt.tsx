@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setWorkTime } from '../api/users';
+import { setWorkTime, getUserInfo } from '../../api/users';
 
 const WorkTimePage = () => {
-  const navigate = useNavigate();
-  const [time, setTime] = useState("09:00");
+    const navigate = useNavigate();
+    const [time, setTime] = useState("09:00");
+    
+    useEffect(() => {
+        const fetchCurrentTime = async () => {
+        try {
+            const data = await getUserInfo();
+            if (data && data.worktime) {
+                setTime(data.worktime);
+            }
+        } catch (error) {
+            console.error("기존 정보 로딩 실패:", error);
+        }
+        };
+        fetchCurrentTime();
+    }, []);  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await setWorkTime(time);      
+      await setWorkTime(time);   
+      localStorage.setItem('worktime', time);   
       alert("출근 시간이 설정되었습니다!");
-      navigate('/'); 
+      navigate('/userinfo'); 
     } catch (error) {
       console.error("출근 시간 설정 실패:", error);
       console.log(time);
@@ -49,16 +64,16 @@ const WorkTimePage = () => {
             type="submit"
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
-            설정 완료 및 시작하기
+            변경 완료
           </button>
         </form>
         
         <div className="mt-4 text-center">
             <button 
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/userinfo')}
                 className="text-sm text-gray-400 hover:text-gray-600 underline"
             >
-                건너뛰기
+                취소하고 돌아가기
             </button>
         </div>
       </div>

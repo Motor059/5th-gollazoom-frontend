@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { changePassword } from '../api/users';
+import { changePassword } from '../../api/users';
 import { AxiosError } from 'axios';
 
 const ChangePw = () => {
@@ -109,10 +109,10 @@ const ChangePw = () => {
 
         <div className="mt-4 text-center">
           <button 
-            onClick={() => navigate('/deleteuser')}
+            onClick={() => navigate('/userinfo')}
             className="text-gray-500 hover:text-gray-700 text-sm font-medium underline"
           >
-            내 정보로 돌아가기
+            취소하고 돌아가기
           </button>
         </div>
       </div>
