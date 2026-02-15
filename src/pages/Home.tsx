@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Sparkles, CloudRain, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
-
+import useDailyWash from '../hooks/Dailywash';
+import DailyWashModal from '../components/modal/Dailywash';
+  
 interface RecommendationSet {
   type: string;
   score: number;
@@ -32,9 +34,16 @@ interface DisplayData {
   comment: string;
   isWarning: boolean;
 }
-// 홈 화면에는 본인이 선택한 코디가 나오도록 하고 나중에 30분 전에도 설정 안돼있으면
-// 강제로 의상 추천을 해주는 방식으로 변경 필요
+
 const Home: React.FC = () => {
+
+  const { 
+    isWashModalOpen, 
+    triggerWashPrompt, 
+    handleConfirmWash, 
+    handleCancelWash 
+  } = useDailyWash();
+
   const [data, setData] = useState<DisplayData | null>(null);
 
   useEffect(() => {
@@ -187,12 +196,27 @@ const Home: React.FC = () => {
           <span className="text-xs font-bold">{data.comment}</span>
         </div>
       </section>
+
+      {/* 수동 세탁 버튼 */}
+      <button 
+        onClick={() => triggerWashPrompt(false)}
+        className="mt-2 py-3 bg-gray-800 text-white text-sm font-bold rounded-[20px] shadow-sm hover:bg-black transition w-full"
+      >
+        🌙 오늘 일과 끝! 입은 옷 세탁하기
+      </button>
       
       {/* 이번 주 통계 */}
       <section className="border border-gray-100 rounded-[20px] p-5 shadow-sm mt-auto">
          <h3 className="text-base font-bold text-gray-900 mb-2">이번 주 통계</h3>
          <div className="text-center text-sm text-gray-400 py-4">데이터 준비 중...</div>
       </section>
+
+      {/* 세탁 팝업 */}
+      <DailyWashModal 
+        isOpen={isWashModalOpen}
+        onConfirm={handleConfirmWash}
+        onCancel={handleCancelWash}
+      />
     </div>
   );
 };

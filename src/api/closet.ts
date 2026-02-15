@@ -1,5 +1,4 @@
 import api from './axios';
-
 export interface ClothInput {
     image: File;
     category: string;
@@ -86,4 +85,13 @@ export const updateCloth = async (clothId: string, data: FormData | UpdateClothR
 export const deleteCloth = async (clothId: string) => {
     const response = await api.delete(`/api/closet/${clothId}`);
     return response.data;
+};
+
+// 옷 세탁 상태 다중 변경 (PATCH /api/closet/clothes/wash-status)
+export const updateWashStatus = async (clothIds: number[], status: "WASHING" | "AVAILABLE") => {
+  const response = await api.patch('/api/closet/clothes/wash-status', {
+    clothIds: clothIds,
+    washStatus: status
+  });
+  return response.data;
 };

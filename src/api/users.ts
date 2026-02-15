@@ -64,3 +64,15 @@ export const changeWorktime = async (worktime: string) => {
     const response = await api.patch('/users/time', { worktime });
     return response.data;
 }
+
+export const changeWashsetting = async (isUsingWashUpTech: boolean) => {
+  const response = await api.patch('/users/wash-setting', {
+    isUsingWashUpTech: isUsingWashUpTech
+  });
+  return response.data;
+};
+
+export const getWashsetting = async () => {
+  const response = await api.get('/users/wash-setting');
+  return response.data; 
+};

@@ -1,4 +1,4 @@
-import { deleteUser, getUserInfo } from "../../api/users";
+import { deleteUser, getUserInfo, getWashsetting, changeWashsetting } from "../../api/users";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 
@@ -8,20 +8,38 @@ const UserInfo = () => {
         username: "",
         nickname: "",
         worktime: "",
-        //savedTime: "" 시간 남으면 구현
     });
+
+    const [isUsingWash, setIsUsingWash] = useState(false);
 
     useEffect(() => {
         const fetchUserInfo = async () => {
             try {
                 const data = await getUserInfo();
                 setUser(data);
+                const settingData = await getWashsetting();
+                if (settingData && settingData.data) {
+                    setIsUsingWash(settingData.data.isUsingWashUpTech);
+                }
             } catch (error) {
                 console.error("내 정보 로딩 실패:", error);
             }
         };
         fetchUserInfo();
     }, []);
+
+    {/* 세탁 여부 변경 핸들러 */}
+    const handleToggleWash = async (newState: boolean) => {
+        setIsUsingWash(newState);
+        try {
+            await changeWashsetting(newState);
+            localStorage.setItem('isUsingWashUpTech', String(newState));
+        } catch (error) {
+            console.error("설정 변경 실패:", error);
+            setIsUsingWash(!newState); 
+            alert("설정 변경에 실패했습니다.");
+        }
+    };
 
     {/* 로그아웃 추가 */}
     const handleLogout = () => {
@@ -122,24 +140,26 @@ const UserInfo = () => {
             </button>
           </div>
 
-          {/* 닉네임 */}
+          {/* 세탁 기능 사용 여부 */}
           <div className="border-b border-gray-100 pb-4 flex justify-between items-center">
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                절약한 시간
+                세탁 기능
               </label>
-              <div className="text-lg font-medium text-gray-800 tracking-widest">
-                {/*{user?.savedTime}*/}
+              <div className={`text-lg font-medium tracking-widest ${isUsingWash ? 'text-blue-600' : 'text-gray-400'}`}>
               </div>
             </div>
             
-            {/* 절약한 시간 확인 버튼 */}
-            <button 
-              className="text-sm text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={() => alert('추후 구현 예정 기능입니다.')}
-            >
-              확인
-            </button>
+            {/* 세탁 기능 스위치 */}
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={isUsingWash}
+                onChange={(e) => handleToggleWash(e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
           </div>
         </div>
 
