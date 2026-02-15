@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signup } from "../api/users";
+import { signup, checkUsername } from "../../api/users";
 import { useNavigate } from "react-router-dom";
 
 const SignupPage = () => {
@@ -25,13 +25,31 @@ const SignupPage = () => {
             console.log("Signup successful:", data);
             localStorage.setItem('id', data.id);
             localStorage.setItem('username', data.username);
-            localStorage.setItem('name', data.nickname);
+            localStorage.setItem('nickname', data.nickname);
             navigate("/login", {state: {isNewUser: true}});
         } catch (error) {
             console.error("Signup failed:", error);
             alert("회원가입에 실패하였습니다. 다시 시도해주세요.");
         }
-    };
+    }
+
+    const handleUsernameCheck = async () => {
+        try {
+            const data = await checkUsername(formData.username);
+            if (data && data.username) {
+                alert("이미 사용 중인 아이디입니다.");
+            } 
+        } catch (error: any) {
+            if (error.response && error.response.status === 404) {
+              alert("사용 가능한 아이디입니다.");
+            } else {
+             console.error("중복 확인 에러", error);
+             alert("중복 확인 중 오류가 발생했습니다.");
+            }        
+        }
+  }
+
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
@@ -49,9 +67,10 @@ const SignupPage = () => {
                 onChange={handleChange}
                 
               />
-              <button 
+              <button
+              type="button"
               className="text-sm border border-gray-300 text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={() => alert('추후 구현 예정 기능입니다.')}
+              onClick={handleUsernameCheck}
               >
               중복확인
               </button>
@@ -80,12 +99,13 @@ const SignupPage = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
                 placeholder="닉네임 (이름)"
                 onChange={handleChange}
+                maxLength={10}
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition duration-200"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200"
             >
               가입하기
             </button>
@@ -95,7 +115,7 @@ const SignupPage = () => {
             이미 계정이 있으신가요?{' '}
             <span 
               onClick={() => navigate('/login')} 
-              className="text-green-600 hover:text-green-800 font-semibold cursor-pointer"
+              className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
             >
               로그인 하러가기
             </span>

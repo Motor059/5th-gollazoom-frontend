@@ -4,8 +4,10 @@ import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, 
   isSameMonth, isSameDay, addDays, isBefore, isToday 
 } from 'date-fns';
-import hanger from '../assets/icons/hanger.png';
-import clothes from '../assets/icons/clothes.png';
+import hanger from '../../assets/icons/hanger.png';
+import clothes from '../../assets/icons/clothes.png';
+import ClothItem from '../../components/common/ClothItem';
+import ConfirmModal from '../../components/common/ConfirmModal';
 // import { MOCK_CLOTHES } from '../mocks/mockData';
 
 const Calendar = () => {
@@ -17,18 +19,24 @@ const Calendar = () => {
   //서버 의상 목록을 저장할 상태 추가
   const [serverClothes, setServerClothes] = useState<any[]>([]);
 
-  // 코디 작성을 위한 상세 선택 상태 관리
-  const [tempSelectedItems, setTempSelectedItems] = useState<Record<string, {id: number, url: string} | null>>({
+  // 코디 작성을 위한 상세 선택 상태 관리, 객체 전체 저장하도록 수정
+  const [tempSelectedItems, setTempSelectedItems] = useState<Record<string, any | null>>({
     TOP: null, BOTTOM: null, DRESS: null, OUTER: null
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectingCategory, setSelectingCategory] = useState<string | null>(null);
 
+  // data 상태 내 items 타입 변경 (문자열 배열 -> 객체 배열)
   const [data, setData] = useState<Record<string, { 
     hasCoordi: boolean; 
-    items: string[]; 
+    items: any[]; // imageUrl[] 에서 Cloth[] 로 변경
     wearId?: number // 서버에서 받은 고유 ID 저장용
   }>>({});
+
+  // 팝업 상태 관리 추가
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingPresetId, setPendingPresetId] = useState<number | null>(null);
+
 
   // 착용 함수
   // const handleEditCoordi = () => {
@@ -95,8 +103,9 @@ const Calendar = () => {
           ...prev,
           [dateKey]: {
             hasCoordi: true,
-            // 상세 화면에서도 이미지를 보여줘야 하므로 url들만 저장
-            items: Object.values(tempSelectedItems).map(item => item?.url || "")
+            wearId: existingWearId || result.wearId, // wearId 업데이트
+            // 객체 그대로 저장하도록 수정
+            items: Object.values(tempSelectedItems).filter(item => item !== null)
           }
         }));
         
@@ -123,22 +132,9 @@ const Calendar = () => {
   }
 };
 
-// 저장 로직 분기 함수
-const handleFinalRegister = async (presetId?: number) => {
+// 실제 서버에 등록을 요청하는 공통 함수 추가
+const handleActualRegister = async (body: any) => {
   const token = localStorage.getItem('authToken');
-  const dateStr = format(selectedDate, 'yyyy-MM-dd');
-
-  // 1번(presetId가 있을 때)과 2번(없을 때, 개별 ID 추출) 구분
-  const body = presetId 
-    ? { presetId, date: dateStr } 
-    : { 
-        topClothId: String(tempSelectedItems.TOP?.id || ""),
-        bottomClothId: String(tempSelectedItems.BOTTOM?.id || ""),
-        dressClothId: String(tempSelectedItems.DRESS?.id || ""),
-        outerClothId: String(tempSelectedItems.OUTER?.id || ""),
-        date: dateStr 
-      };
-
   try {
     const response = await fetch('http://192.168.158.60:8080/api/wears', {
       method: 'POST',
@@ -148,11 +144,53 @@ const handleFinalRegister = async (presetId?: number) => {
     if (response.ok) {
       alert("착용 등록 완료!");
       setViewMode('detail');
-      fetchSelectedDateData(selectedDate); // 캘린더 갱신
+      fetchSelectedDateData(selectedDate);
     }
   } catch (e) {
     console.error("등록 실패:", e);
+  } finally {
+    setPendingPresetId(null);
   }
+};
+
+// 메인 핸들러 함수 수정
+const handleFinalRegister = async (presetId?: number) => {
+  const token = localStorage.getItem('authToken');
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+  const body = presetId 
+    ? { presetId, date: dateStr } 
+    : { 
+        topClothId: String(tempSelectedItems.TOP?.clothId || ""),
+        bottomClothId: String(tempSelectedItems.BOTTOM?.clothId || ""),
+        dressClothId: String(tempSelectedItems.DRESS?.clothId || ""),
+        outerClothId: String(tempSelectedItems.OUTER?.clothId || ""),
+        date: dateStr 
+      };
+
+  // --- 세탁 체크 로직 분기 ---
+
+  // 프리셋 등록인 경우 (세탁 체크 API 필요)
+  if (presetId) {
+    try {
+      const checkRes = await fetch(`http://192.168.158.60:8080/api/presets/${presetId}/washCheck`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const checkData = await checkRes.json();
+
+      if (checkData.data?.hasWashing) {
+        // 세탁 중인 옷이 있다면 팝업 띄우고 중단
+        setPendingPresetId(presetId);
+        setIsConfirmOpen(true);
+        return; 
+      }
+    } catch (e) {
+      console.error("세탁 체크 에러:", e);
+    }
+  }
+
+  // 개별 등록이거나 세탁 중인 옷이 없는 프리셋인 경우
+  handleActualRegister(body);
 };
 
   // 날짜 선택 시 호출될 조회 함수
@@ -167,19 +205,19 @@ const handleFinalRegister = async (presetId?: number) => {
       });
       const result = await response.json();
 
+      // if문 내용 수정
       if (result && result.clothIds) {
-        // [핵심 수정] MOCK_CLOTHES 대신 서버에서 받아온 serverClothes를 사용합니다.
-        const coordiImages = result.clothIds.map((id: number) => {
-          const found = serverClothes.find(c => c.clothId === id);
-          return found ? found.imageUrl : "";
-        });
+        const coordiItems = result.clothIds.map((id: number) => {
+        // clothId와 매칭되는 객체 전체를 찾음
+          return serverClothes.find(c => c.clothId === id) || null;
+        }).filter((item: any) => item !== null);
 
         setData(prev => ({
           ...prev,
           [dateKey]: {
             hasCoordi: true,
             wearId: result.wearId,
-            items: coordiImages // 찾은 이미지 URL 리스트
+            items: coordiItems // 이제 객체 배열이 들어감
           }
         }));
       } else {
@@ -226,7 +264,7 @@ const handleFinalRegister = async (presetId?: number) => {
   };
 
   useEffect(() => {
-    // 월이 바뀌면 이전 달의 아이콘들을 화면에서 지워줍니다.
+    // 월이 바뀌면 이전 달의 아이콘들을 화면에서 지움
     setData({});
     fetchSelectedDateData(startOfMonth(currentMonth));
   }, [currentMonth]);
@@ -276,7 +314,8 @@ const handleFinalRegister = async (presetId?: number) => {
                 className="aspect-square border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-[#F8FAFC] cursor-pointer"
               >
                 {tempSelectedItems[slot.key] ? (
-                  <img src={tempSelectedItems[slot.key]!.url} className="w-full h-full object-cover rounded-[28px]" alt={slot.label} />
+                  // 랜더링 수정
+                  <ClothItem item={tempSelectedItems[slot.key]!} className="w-full h-full rounded-[28px]" />
                 ) : (
                   <>
                     <img src={clothes} className="w-10 h-10 mb-2 opacity-30 object-contain" alt="아이콘" />
@@ -335,7 +374,8 @@ const handleFinalRegister = async (presetId?: number) => {
             {dayData.items.map((item, idx) => (
               item !== "" && (
                 <div key={idx} className="aspect-square bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 flex items-center justify-center">
-                  <img src={item} className="w-full h-full object-cover" alt="코디템" />
+                  {/* 랜더링 수정 */}
+                  <ClothItem item={item} />
                 </div>
               )
             ))}
@@ -383,36 +423,55 @@ const handleFinalRegister = async (presetId?: number) => {
     );
   };
 
-  // --- 모달 창: CoordiSave.tsx와 유사 ---
-  const renderModal = () => (
-    <div className="fixed inset-0 bg-black/50 z-[2000] flex items-end justify-center">
-      <div className="w-full max-w-[430px] bg-white rounded-t-[40px] p-8 h-[60vh] flex flex-col shadow-2xl">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b">
-          <strong className="text-lg font-bold">{selectingCategory} 선택</strong>
-          <button onClick={() => setIsModalOpen(false)} className="text-2xl text-gray-400">✕</button>
-        </div>
-        <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-3">
-          {serverClothes
-            .filter(item => item.category === selectingCategory)
-            .map((item) => (
+  // --- 모달 창: CoordiSave.tsx와 유사, 세탁 내용에 따라 수정 ---
+  const renderModal = () => {
+    // 1. 카테고리에 맞는 옷을 필터링하고 + 세탁 중인 옷을 리스트 아래로 정렬.
+    const sortedClothes = serverClothes
+      .filter(item => item.category === selectingCategory)
+      .sort((a, b) => {
+        const aStatus = a.washStatus === 'WASHING' ? 1 : 0;
+        const bStatus = b.washStatus === 'WASHING' ? 1 : 0;
+        return aStatus - bStatus; // 세탁 중인 옷이 뒤로 가게 함
+      });
+
+    return (
+      <div className="fixed inset-0 bg-black/50 z-[2000] flex items-end justify-center">
+        <div className="w-full max-w-[430px] bg-white rounded-t-[40px] p-8 h-[60vh] flex flex-col shadow-2xl">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b">
+            <strong className="text-lg font-bold">{selectingCategory} 선택</strong>
+            <button onClick={() => setIsModalOpen(false)} className="text-2xl text-gray-400">✕</button>
+          </div>
+          <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-3">
+            {sortedClothes.map((item) => (
               <div 
                 key={item.clothId}
                 onClick={() => {
+                  // 세탁 중인 옷은 선택할 수 없도록 방어 로직 추가
+                  if (item.washStatus === 'WASHING') {
+                    alert("현재 세탁 중인 의상입니다.");
+                    return;
+                  }
                   setTempSelectedItems(prev => ({ 
                     ...prev, 
-                    [item.category]: { id: item.clothId, url: item.imageUrl } // 이 부분이 핵심!
+                    [item.category]: item 
                   }));
                   setIsModalOpen(false);
                 }}
-                className="aspect-square rounded-xl overflow-hidden border cursor-pointer active:scale-95"
+                className={`aspect-square rounded-xl overflow-hidden border cursor-pointer active:scale-95 transition-all
+                  ${item.washStatus === 'WASHING' ? 'opacity-50 grayscale' : ''}`} // 세탁 중이면 흐리게 처리
               >
-                <img src={item.imageUrl} className="w-full h-full object-cover" alt={item.name} />
+                {/* ClothItem의 hasWashing 프롭에 washStatus 조건을 연결합니다. */}
+                <ClothItem item={{ 
+                  ...item, 
+                  hasWashing: item.washStatus === 'WASHING' 
+                }} />
               </div>
             ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderHeader = () => (
     <div className="flex justify-between items-center p-4 border-b bg-white">
@@ -478,6 +537,32 @@ const handleFinalRegister = async (presetId?: number) => {
       {renderCells()}
       {renderDetailSection()}
       {isModalOpen && renderModal()}
+
+
+      {/* 임시용, 차후 삭제 */}
+      <button 
+        onClick={() => setIsConfirmOpen(true)} 
+        className="fixed bottom-20 right-4 z-[3000] bg-red-500 text-white p-4 rounded-full shadow-xl"
+      >
+        팝업 확인용
+      </button>
+
+      {/* 팝업 추가 */}
+      <ConfirmModal 
+        isOpen={isConfirmOpen}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setPendingPresetId(null);
+        }}
+        onConfirm={() => {
+          if (pendingPresetId) {
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            handleActualRegister({ presetId: pendingPresetId, date: dateStr });
+          }
+          setIsConfirmOpen(false);
+        }}
+        message={"세탁 중인 의상이 포함되어 있는 코디입니다.\n 정말로 입으시겠습니까?"}
+      />
     </div>
   );
 };

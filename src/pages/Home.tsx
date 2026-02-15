@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Sun, Sparkles, CloudRain, AlertCircle } from 'lucide-react';
 import api from '../api/axios';
-
+import useDailyWash from '../hooks/Dailywash';
+import DailyWashModal from '../components/modal/Dailywash';
+  
 interface RecommendationSet {
   type: string;
   score: number;
@@ -34,6 +36,14 @@ interface DisplayData {
 }
 
 const Home: React.FC = () => {
+
+  const { 
+    isWashModalOpen, 
+    triggerWashPrompt, 
+    handleConfirmWash, 
+    handleCancelWash 
+  } = useDailyWash();
+
   const [data, setData] = useState<DisplayData | null>(null);
 
   useEffect(() => {
@@ -74,12 +84,10 @@ const Home: React.FC = () => {
 
           // 카테고리별 분류
           const outer = clothDetails.find(item => item.category?.toUpperCase() === 'OUTER');
-          
           const top = clothDetails.find(item => {
              const cat = item.category?.toUpperCase();
-             return cat === 'TOP' || cat === 'DRESS' || cat === 'ONEPIECE';
+             return cat === 'TOP' || cat === 'DRESS';
           });
-          
           const bottom = clothDetails.find(item => item.category?.toUpperCase() === 'BOTTOM');
 
           // 코멘트 설정
@@ -112,7 +120,7 @@ const Home: React.FC = () => {
   }, []);
 
   if (!data) return <div className="min-h-screen flex justify-center items-center">로딩 중...</div>;
-
+  
   const PLACEHOLDER_IMG = "https://via.placeholder.com/300?text=No+Image";
 
   return (
@@ -188,12 +196,27 @@ const Home: React.FC = () => {
           <span className="text-xs font-bold">{data.comment}</span>
         </div>
       </section>
+
+      {/* 수동 세탁 버튼 */}
+      <button 
+        onClick={() => triggerWashPrompt(false)}
+        className="mt-2 py-3 bg-gray-800 text-white text-sm font-bold rounded-[20px] shadow-sm hover:bg-black transition w-full"
+      >
+        🌙 오늘 일과 끝! 입은 옷 세탁하기
+      </button>
       
       {/* 이번 주 통계 */}
       <section className="border border-gray-100 rounded-[20px] p-5 shadow-sm mt-auto">
          <h3 className="text-base font-bold text-gray-900 mb-2">이번 주 통계</h3>
          <div className="text-center text-sm text-gray-400 py-4">데이터 준비 중...</div>
       </section>
+
+      {/* 세탁 팝업 */}
+      <DailyWashModal 
+        isOpen={isWashModalOpen}
+        onConfirm={handleConfirmWash}
+        onCancel={handleCancelWash}
+      />
     </div>
   );
 };

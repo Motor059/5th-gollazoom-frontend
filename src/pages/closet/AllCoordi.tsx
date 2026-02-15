@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CoordiDetailModal, { type CoordiData } from '../../components/CoordiDetailModal'; // 새로 만든 모달 임포트
+import CoordiDetailModal, { type CoordiData } from '../../components/common/CoordiDetailModal'; // 새로 만든 모달 임포트
+import ClothItem from '../../components/common/ClothItem';
+import api from '../../api/axios';
 
 interface CoordiImages {
   TOP: string;
@@ -9,17 +11,22 @@ interface CoordiImages {
   OUTER: string;
 }
 
-interface ClothItem {
+// 기존 이름에서 컴포넌트 이름이 겹쳐 수정
+interface CoordiCloth {
   slot: string;
-  clothId: number;
+  clothId: string | number;
   imageUrl: string;
+  // 퀵등록 아이콘 판단을 위해 category 등이 필요할 수 있음
+  category: string; 
+  subCategory?: string;
+  color?: string;
 }
 
-interface Coordi {
-  presetId: string; 
-  name: string;
-  items: ClothItem[]; // 배열 []로 선언해야 find를 씀
-}
+// interface Coordi {
+//   presetId: string; 
+//   name: string;
+//   items: CoordiCloth[]; // 배열 []로 선언해야 find를 씀
+// }
 
 const AllCoordi = () => {
   const navigate = useNavigate();
@@ -41,7 +48,9 @@ const AllCoordi = () => {
       if (!response.ok) throw new Error('데이터를 불러오는데 실패했습니다.');
 
       const data = await response.json();
-      setCoordiList(data); 
+      // 수정되지 않았다면 기존 fetch 로직이나 api.get(url)을 그대로 쓰되,
+      // 만약 의상 API처럼 data.items 구조가 아니라면 바로 data를 넣음.
+      setCoordiList(Array.isArray(data) ? data : []); 
       
     } catch (e) {
       console.error("API 연결 에러:", e);
@@ -69,10 +78,15 @@ const AllCoordi = () => {
               className="bg-gray-50 rounded-2xl p-2 border border-gray-100 shadow-sm active:scale-95 transition-transform cursor-pointer aspect-square grid grid-cols-2 gap-0.5 overflow-hidden"
             >
               {["TOP", "BOTTOM", "DRESS", "OUTER"].map(slot => {
-                const item = coordi.items.find((i: ClothItem) => i.slot === slot);
+                const item = coordi.items.find((i: CoordiCloth) => i.slot === slot);
                 return (
                   <div key={slot} className="bg-gray-200 rounded-sm overflow-hidden">
-                    {item && <img src={item.imageUrl} className="w-full h-full object-cover" alt={slot} />}
+                    {item ? (
+                        // ClothItem으로 랜더링 수정.
+                        <ClothItem item={item} />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100" />
+                      )}
                   </div>
                 );
               })}

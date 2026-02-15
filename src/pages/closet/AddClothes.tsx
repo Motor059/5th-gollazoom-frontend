@@ -1,83 +1,24 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import album from '../../assets/icons/album.png';
 import camera from '../../assets/icons/camera.png';
-import { COLOR_OPTIONS, SEASON_OPTIONS, CATEGORY_OPTIONS, type Option } from '../../data/constants';
-import { addCloth } from '../../api/closet';
+import quick from '../../assets/icons/quick.png';
+// import { COLOR_OPTIONS, SEASON_OPTIONS, CATEGORY_OPTIONS, type Option } from '../../data/constants';
+// import { addCloth } from '../../api/closet';
 
 const AddClothes = () => {
   const navigate = useNavigate();
-  const [image, setImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [category, setCategory] = useState('');
-  const [rainOk, setRainOk] = useState(true);
-  // 단일 선택('')에서 중복 선택([])으로 변경
-  const [selectedSeasons, setSelectedSeasons] = useState<string[]>([]);
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-
-  const [memo, setMemo] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
+  
   const albumRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-
-  // 토글 함수 추가 (계절용)
-  const toggleSeason = (value: string) => {
-    setSelectedSeasons(prev => 
-      prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
-    );
-  };
-
-  // 토글 함수 추가 (색상용)
-  const toggleColor = (value: string) => {
-    setSelectedColors(prev => 
-      prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]
-    );
-  };
-
-  const handleSubmit = async () => {
-    if (!imageFile || !category || selectedSeasons.length === 0 || selectedColors.length === 0) {
-      alert("각 정보는 반드시 입력되어야 합니다.");
-      return;
-    }
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    formData.append('category', category);
-    formData.append('season', selectedSeasons.join(','));
-    formData.append('color', selectedColors.join(','));
-    formData.append('rainOk', String(rainOk));
-    formData.append('memo', memo);
-
-    try {
-        await addCloth(formData);
-        alert("옷이 추가되었어요.");
-        setIsSubmitted(true);
-    } catch (error) {
-      console.error("서버 전송 오류:", error);
-      alert("서버와 연결할 수 없습니다.");
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImage(reader.result as string);
-      reader.readAsDataURL(file);
+      navigate('/closet/add/detail', { state: { file } });
+      console.log("파일 선택됨:", file);
     }
   };
-
-  if (isSubmitted) {
-    return (
-      <div className="p-10 flex flex-col items-center text-center gap-5">
-        <div className="text-5xl">✅</div>
-        <h2 className="text-xl font-bold">의상이 등록되었습니다.</h2>
-        <button onClick={() => { setImage(null); setIsSubmitted(false); }} className="w-full p-4 bg-blue-600 text-white rounded-xl font-bold">추가로 의상 등록하기</button>
-        <button onClick={() => navigate('/closet')} className="w-full p-4 bg-white text-gray-500 border border-gray-200 rounded-xl font-bold">옷장으로 돌아가기</button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col h-full bg-white overflow-y-auto">
@@ -86,99 +27,39 @@ const AddClothes = () => {
         <h3 className="text-xl font-bold">의상 등록하기</h3>
       </div>
 
-      <div className="flex-1 p-6 overflow-y-auto">
-        {!image ? (
-          <div className="flex flex-col gap-4">
-            <div onClick={() => albumRef.current?.click()} className="h-[160px] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 cursor-pointer">
-              <img src={album} className="w-12 h-12 mb-2 opacity-40 object-contain" alt="앨범" />
-              <span className="text-gray-500 font-bold text-sm text-center">앨범에서 선택</span>
-            </div>
-            <div onClick={() => cameraRef.current?.click()} className="h-[160px] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 cursor-pointer">
-              <img src={camera} className="w-12 h-12 mb-2 opacity-40 object-contain" alt="카메라" />
-              <span className="text-gray-500 font-bold text-sm text-center">직접 촬영하기</span>
-            </div>
-          </div>
-        ) : (
-          /* 등록 상세 정보 폼 */
-          <div className="flex flex-col gap-6">
-            <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-gray-100 shadow-inner">
-              <img src={image} className="w-full h-full object-cover" alt="preview" />
-              <button onClick={() => setImage(null)} className="absolute top-4 right-4 w-9 h-9 bg-black/50 text-white rounded-full flex items-center justify-center font-bold">✕</button>
-            </div>
-            
-            <div className="flex flex-col gap-5 pb-10">
-              <div>
-                <label className="block text-sm font-bold text-gray-500 mb-2">카테고리</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="" disabled>선택하세요</option>
-                  {CATEGORY_OPTIONS.map((opt: Option) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-              </div>
+      {/* 선택 영역 */}
+      <div className="flex-1 p-6 flex flex-col gap-4">
+        <p className="text-gray-400 text-sm font-medium mb-2">등록 방법을 선택해주세요</p>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-500 mb-3">계절 (중복 선택 가능)</label>
-                <div className="flex flex-wrap gap-2">
-                  {SEASON_OPTIONS.map((opt: Option) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => toggleSeason(opt.value)}
-                      className={`px-4 py-2 rounded-full border text-sm font-bold transition-all ${
-                        selectedSeasons.includes(opt.value)
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-gray-50 text-gray-400 border-gray-200'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        {/* 옵션 1: 앨범에서 선택 */}
+        <div 
+          onClick={() => albumRef.current?.click()} 
+          className="h-[140px] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <img src={album} className="w-10 h-10 mb-2 opacity-40 object-contain" alt="앨범" />
+          <span className="text-gray-600 font-bold text-sm">앨범에서 선택</span>
+        </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-500 mb-2 font-bold">비 올 때 입어도 되나요?</label>
-                <div className="flex gap-6 mt-1">
-                  <label className="flex items-center gap-2"><input type="radio" checked={rainOk === true} onChange={() => setRainOk(true)} /> 예</label>
-                  <label className="flex items-center gap-2"><input type="radio" checked={rainOk === false} onChange={() => setRainOk(false)} /> 아니오</label>
-                </div>
-              </div>
+        {/* 옵션 2: 직접 촬영하기 */}
+        <div 
+          onClick={() => cameraRef.current?.click()} 
+          className="h-[140px] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <img src={camera} className="w-10 h-10 mb-2 opacity-40 object-contain" alt="카메라" />
+          <span className="text-gray-600 font-bold text-sm">직접 촬영하기</span>
+        </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-500 mb-3">색상 (중복 선택 가능)</label>
-                <div className="flex flex-wrap gap-2">
-                  {COLOR_OPTIONS.map((opt: Option) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => toggleColor(opt.value)}
-                      className={`px-4 py-2 rounded-full border text-sm font-bold transition-all ${
-                        selectedColors.includes(opt.value)
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-gray-50 text-gray-400 border-gray-200'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-500 mb-2">메모 (선택)</label>
-                <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="메모를 자유롭게 입력하세요 (생략 가능)" className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 h-24 resize-none outline-none" />
-              </div>
-
-              <button 
-                onClick={handleSubmit}
-                style={{ backgroundColor: '#0055ff' }} 
-                className="w-full p-5 bg-[#0055ff] text-white rounded-2xl font-bold text-lg shadow-xl active:scale-95 transition-all cursor-pointer"
-              >
-                등록하기
-              </button>
-            </div>
-          </div>
-        )}
+        {/* 옵션 3: 퀵등록 (기본 의상) */}
+        <div 
+          onClick={() => navigate('/closet/quick-add')} 
+          className="h-[140px] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <img src={quick} className="w-10 h-10 mb-2 opacity-40 object-contain" alt="퀵등록" />
+          <span className="text-gray-600 font-bold text-lg">퀵등록</span>
+          <span className="text-gray-400 text-sm font-medium">아이콘으로 빠르게 등록</span>
+        </div>
       </div>
+
       <input type="file" ref={albumRef} className="hidden" accept="image/*" onChange={handleFileChange} />
       <input type="file" ref={cameraRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileChange} />
     </div>

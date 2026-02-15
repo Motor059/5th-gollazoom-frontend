@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import clothes from '../../assets/icons/clothes.png'; 
 import allClothes from '../../assets/icons/all-clothes.png';
 import coordi from '../../assets/icons/coordi.png';
@@ -29,6 +30,7 @@ function Closet() {
             /><span className="text-base font-medium text-[#333]">{category.name}</span>
         </button>
       ))}
+
     </div>
   );
 }

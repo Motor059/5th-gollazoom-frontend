@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setWorkTime } from '../api/users';
+import { setWorkTime, changeWashsetting } from '../../api/users';
 
 const WorkTimePage = () => {
   const navigate = useNavigate();
   const [time, setTime] = useState("09:00");
+  const [isUsingWash, setIsUsingWash] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await setWorkTime(time);      
+      await changeWashsetting(isUsingWash);
+      localStorage.setItem('isUsingWashUpTech', String(isUsingWash));
       alert("출근 시간이 설정되었습니다!");
       navigate('/'); 
     } catch (error) {
@@ -43,6 +46,23 @@ const WorkTimePage = () => {
               onChange={(e) => setTime(e.target.value)}
               className="block w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-lg text-center"
             />
+          </div>
+
+          {/* 세탁 기능 ON/OFF 토글 스위치 */}
+          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div>
+              <span className="block text-sm font-bold text-gray-700">세탁 관리 기능</span>
+              <span className="text-xs text-gray-500">밤 10시 알림 및 빨래통 아이콘 사용</span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={isUsingWash}
+                onChange={(e) => setIsUsingWash(e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+            </label>
           </div>
 
           <button
