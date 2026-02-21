@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setWorkTime, getUserInfo } from '../../api/users';
+import AlertModal from '../../components/modal/Alert';
 
 const WorkTimePage = () => {
     const navigate = useNavigate();
     const [time, setTime] = useState("09:00");
     
+    const [alertState, setAlertState] = useState({
+        isOpen: false,
+        message: "",
+        type: "info" as "success" | "error" | "info",
+        onConfirm: () => {} 
+    });
+
+    const showAlert = (message: string, type: "success" | "error" | "info" = "info", onConfirm?: () => void) => {
+        setAlertState({ 
+            isOpen: true, 
+            message, 
+            type, 
+            onConfirm: onConfirm || (() => setAlertState(prev => ({ ...prev, isOpen: false })))
+        });
+    };
+
     useEffect(() => {
         const fetchCurrentTime = async () => {
         try {
@@ -25,12 +42,14 @@ const WorkTimePage = () => {
     try {
       await setWorkTime(time);   
       localStorage.setItem('worktime', time);   
-      alert("출근 시간이 설정되었습니다!");
-      navigate('/userinfo'); 
+      
+      showAlert("출근 시간이 성공적으로 설정되었습니다!", "success", () => {
+          navigate('/userinfo');
+      });
+
     } catch (error) {
       console.error("출근 시간 설정 실패:", error);
-      console.log(time);
-      alert("시간 설정에 실패했습니다. 다시 시도해주세요.");
+      showAlert("시간 설정에 실패했습니다.\n다시 시도해주세요.", "error");
     }
   };
 
@@ -77,6 +96,13 @@ const WorkTimePage = () => {
             </button>
         </div>
       </div>
+
+      <AlertModal 
+          isOpen={alertState.isOpen}
+          onClose={alertState.onConfirm}
+          message={alertState.message}
+          type={alertState.type}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Clock, X, Loader2 } from 'lucide-react'; 
+import { Clock, X, Loader2, CheckCircle2 } from 'lucide-react'; 
 import api from '../../api/axios';
+import { registerDailyWear } from '../../api/wears';
 
 interface RecommendationResponse {
   data: {
@@ -20,17 +20,27 @@ interface UrgentModalProps {
   isOpen: boolean;
   onClose: () => void;
   workTime: string;
+  onRegisterSuccess: () => void;
 }
 
-const UrgentModal = ({ isOpen, onClose, workTime }: UrgentModalProps) => {
-  const navigate = useNavigate();
+const UrgentModal = ({ isOpen, onClose, workTime, onRegisterSuccess }: UrgentModalProps) => {
   const [items, setItems] = useState<ClothDetail[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [recommendedIds, setRecommendedIds] = useState<number[]>([]);
 
   // 모달이 열릴 때마다 추천 데이터 부름
   useEffect(() => {
     if (isOpen) {
       fetchUrgentRecommendation();
+      
+      // 음성 안내
+      if ('speechSynthesis' in window) {
+        const text = `출근 30분 전입니다! 오늘의 긴급 추천 코디를 확인해주세요.`;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        window.speechSynthesis.speak(utterance);
+      }
     }
   }, [isOpen]);
 
@@ -38,16 +48,20 @@ const UrgentModal = ({ isOpen, onClose, workTime }: UrgentModalProps) => {
     setLoading(true);
     try {
       const res = await api.get<RecommendationResponse>('/api/wears/recommend');
-      const bestSet = res.data.data?.recommendations?.[0]; // 1순위 추천
+      const bestSet = res.data.data?.recommendations?.[0];
 
       if (bestSet && bestSet.clothIds) {
+        setRecommendedIds(bestSet.clothIds);
+        
         const detailPromises = bestSet.clothIds.map(async (id) => {
           try {
             const detailRes = await api.get(`/api/closet/${id}`);
             if (detailRes.data?.data) return detailRes.data.data;
             if (detailRes.data) return detailRes.data;
             return null;
-          } catch { return null; }
+          } catch { 
+            return null; 
+          }
         });
 
         const details = (await Promise.all(detailPromises)).filter((item): item is ClothDetail => item !== null);
@@ -60,40 +74,49 @@ const UrgentModal = ({ isOpen, onClose, workTime }: UrgentModalProps) => {
     }
   };
 
+  const handleRegister = async () => {
+    if (recommendedIds.length === 0) return;
+    setIsRegistering(true);
+    try {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      await registerDailyWear(todayStr, recommendedIds);
+      onRegisterSuccess();
+      onClose();
+    } catch (error) {
+      console.error("등록 실패:", error);
+      alert("등록에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   if (!isOpen) return null;
 
-  const outer = items.find(i => i.category === 'OUTER');
-  const top = items.find(i => ['TOP', 'DRESS'].includes(i.category));
-  const bottom = items.find(i => i.category === 'BOTTOM');
+  const outer = items.find(i => i.category?.toUpperCase() === 'OUTER');
+  const top = items.find(i => ['TOP', 'DRESS'].includes(i.category?.toUpperCase() || ''));
+  const bottom = items.find(i => i.category?.toUpperCase() === 'BOTTOM');
 
   const PLACEHOLDER = "https://via.placeholder.com/150?text=No+Item";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden relative">
-        
-        {/* 닫기 버튼 */}
-        <button onClick={onClose} className="absolute top-3 right-3 text-white/80 hover:text-white z-10">
-          <X size={24} />
-        </button>
+        <button onClick={onClose} className="absolute top-3 right-3 text-white/80 hover:text-white z-10"><X size={24} /></button>
 
-        {/* 헤더 */}
-        <div className="bg-red-600 p-5 pt-8 text-center text-white relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/10 to-transparent"></div>
+        <div className="bg-blue-600 p-5 pt-8 text-center text-white relative">
           <div className="flex justify-center items-center gap-2 mb-1">
             <Clock className="animate-pulse" size={20}/>
-            <span className="font-bold text-lg opacity-90">{workTime} 출근 임박!</span>
+            <span className="font-bold text-lg opacity-90">{workTime} 출근 임박</span>
           </div>
-          <h2 className="text-2xl font-extrabold leading-tight">오늘의 긴급 추천 🚨</h2>
+          <h2 className="text-2xl font-extrabold leading-tight">오늘의 긴급 추천</h2>
         </div>
 
-        {/* 컨텐츠 영역 */}
         <div className="p-5 bg-gray-50 min-h-[300px]">
-          
           {loading ? (
             <div className="h-full flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
-              <Loader2 className="animate-spin text-red-500" size={40} />
+              <Loader2 className="animate-spin text-blue-500" size={40} />
               <p className="text-sm font-medium">최적의 조합을 찾는 중...</p>
             </div>
           ) : (
@@ -103,7 +126,7 @@ const UrgentModal = ({ isOpen, onClose, workTime }: UrgentModalProps) => {
                 <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                   <img src={outer.imageUrl || PLACEHOLDER} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
                   <div>
-                    <span className="text-xs text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-full">Outer</span>
+                    <span className="text-xs text-blue-500 font-bold bg-blue-50 px-2 py-0.5 rounded-full">Outer</span>
                     <p className="font-bold text-gray-800 mt-1">{outer.memo || "아우터"}</p>
                   </div>
                 </div>
@@ -135,20 +158,17 @@ const UrgentModal = ({ isOpen, onClose, workTime }: UrgentModalProps) => {
             </div>
           )}
         </div>
-
-        {/* 하단 버튼 */}
+        
         <div className="p-4 bg-white border-t border-gray-100">
           <button 
-            onClick={() => {
-                navigate('/');
-                onClose();
-            }}
-            className="w-full py-3.5 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition shadow-lg active:scale-[0.98]"
+            onClick={handleRegister}
+            disabled={loading || isRegistering}
+            className="w-full flex justify-center items-center gap-2 py-3.5 rounded-xl bg-blue-600 text-white font-bold hover:bg-black transition shadow-lg active:scale-[0.98] disabled:bg-gray-400"
           >
-            이대로 입고 출근하기 👉
+            {isRegistering ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
+            {isRegistering ? "캘린더에 등록 중..." : "이대로 등록하고 입기"}
           </button>
         </div>
-
       </div>
     </div>
   );

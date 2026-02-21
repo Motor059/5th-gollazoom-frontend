@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { signup, checkUsername } from "../../api/users";
 import { useNavigate } from "react-router-dom";
+import AlertModal from "../../components/modal/Alert";
 
 const SignupPage = () => {
     const [formData, setFormData] = useState({
@@ -9,7 +10,21 @@ const SignupPage = () => {
         nickname: "",
     });
 
+    const [alertState, setAlertState] = useState({
+        isOpen: false,
+        message: "",
+        type: "info" as "success" | "error" | "info"
+    });
+
     const navigate = useNavigate();
+
+    const showAlert = (message: string, type: "success" | "error" | "info" = "info") => {
+        setAlertState({ isOpen: true, message, type });
+    };
+
+    const closeAlert = () => {
+        setAlertState(prev => ({ ...prev, isOpen: false }));
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -18,7 +33,7 @@ const SignupPage = () => {
         });
     }
 
-    const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
             const data = await signup(formData);
@@ -29,26 +44,30 @@ const SignupPage = () => {
             navigate("/login", {state: {isNewUser: true}});
         } catch (error) {
             console.error("Signup failed:", error);
-            alert("회원가입에 실패하였습니다. 다시 시도해주세요.");
+            showAlert("회원가입에 실패하였습니다.\n다시 시도해주세요.", "error");
         }
     }
 
     const handleUsernameCheck = async () => {
+        if (!formData.username) {
+            showAlert("아이디를 입력해주세요.", "error");
+            return;
+        }
+
         try {
             const data = await checkUsername(formData.username);
             if (data && data.username) {
-                alert("이미 사용 중인 아이디입니다.");
+                showAlert("이미 사용 중인 아이디입니다.", "error");
             } 
         } catch (error: any) {
             if (error.response && error.response.status === 404) {
-              alert("사용 가능한 아이디입니다.");
+              showAlert("사용 가능한 아이디입니다.", "success");
             } else {
              console.error("중복 확인 에러", error);
-             alert("중복 확인 중 오류가 발생했습니다.");
+             showAlert("중복 확인 중 오류가 발생했습니다.", "error");
             }        
         }
-  }
-
+    }
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -56,37 +75,37 @@ const SignupPage = () => {
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">회원가입</h2>
         
           <form onSubmit={handleSubmit}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">아이디</label>
-            <div className="flex gap-2 mb-5">
-              <input
-                name="username"
-                type="text"
-                required
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
-                placeholder="사용할 아이디"
-                onChange={handleChange}
-                
-              />
-              <button
-              type="button"
-              className="text-sm border border-gray-300 text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition"
-              onClick={handleUsernameCheck}
-              >
-              중복확인
-              </button>
-              
+            <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">아이디</label>
+                <div className="flex gap-2">
+                <input
+                    name="username"
+                    type="text"
+                    required
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                    placeholder="사용할 아이디"
+                    onChange={handleChange}
+                />
+                <button
+                    type="button"
+                    className="text-sm border border-gray-300 text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 rounded-md hover:bg-blue-50 transition shrink-0"
+                    onClick={handleUsernameCheck}
+                >
+                    중복확인
+                </button>
+                </div>
             </div>
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-            <div className="flex gap-4 mb-5">
-              <input
-                name="password"
-                type="password"
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
-                placeholder="사용할 비밀번호"
-                onChange={handleChange}
-              />
+            <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+                <input
+                    name="password"
+                    type="password"
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                    placeholder="사용할 비밀번호"
+                    onChange={handleChange}
+                />
             </div>
 
             <div className="mb-6">
@@ -121,6 +140,13 @@ const SignupPage = () => {
             </span>
           </div>
         </div>
+
+        <AlertModal 
+            isOpen={alertState.isOpen}
+            onClose={closeAlert}
+            message={alertState.message}
+            type={alertState.type}
+        />
       </div>
   );
 }

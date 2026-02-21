@@ -1,6 +1,7 @@
 import { deleteUser, getUserInfo, getWashsetting, changeWashsetting } from "../../api/users";
 import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect } from "react";
+import AlertModal from "../../components/modal/Alert";
 
 const UserInfo = () => {
     const navigate = useNavigate();
@@ -11,6 +12,22 @@ const UserInfo = () => {
     });
 
     const [isUsingWash, setIsUsingWash] = useState(false);
+
+    const [alertState, setAlertState] = useState({
+        isOpen: false,
+        message: "",
+        type: "info" as "success" | "error" | "info",
+        onConfirm: () => {}
+    });
+
+    const showAlert = (message: string, type: "success" | "error" | "info" = "info", onConfirm?: () => void) => {
+        setAlertState({ 
+            isOpen: true, 
+            message, 
+            type, 
+            onConfirm: onConfirm || (() => setAlertState(prev => ({ ...prev, isOpen: false })))
+        });
+    };
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -37,15 +54,16 @@ const UserInfo = () => {
         } catch (error) {
             console.error("설정 변경 실패:", error);
             setIsUsingWash(!newState); 
-            alert("설정 변경에 실패했습니다.");
+            showAlert("설정 변경에 실패했습니다.", "error");
         }
     };
 
     {/* 로그아웃 추가 */}
     const handleLogout = () => {
         localStorage.clear(); 
-        alert("로그아웃 되었습니다.");
-        navigate("/login"); 
+        showAlert("로그아웃 되었습니다.", "success", () => {
+            navigate("/login"); 
+        });
     };
 
     const handleDelete = async () => {
@@ -53,20 +71,22 @@ const UserInfo = () => {
         try {
             await deleteUser();
             localStorage.clear();
-            alert("회원탈퇴가 완료되었습니다.");
-            navigate("/login");
+            showAlert("회원탈퇴가 완료되었습니다.", "success", () => {
+                navigate("/login");
+            });
         } catch (error) {
             console.error("Delete user failed:", error);
-            alert("회원탈퇴에 실패하였습니다. 다시 시도해주세요.");
+            showAlert("회원탈퇴에 실패하였습니다.\n다시 시도해주세요.", "error");
         }
     };
+
     return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 relative overflow-hidden">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden relative z-10">
         
         {/* 상단 헤더 영역 */}
         <div className="bg-blue-600 px-6 py-4">
-          <h2 className="text-xl font-bold text-white text-center">내 정보 (My Page)</h2>
+          <h2 className="text-xl font-bold text-white text-center">내 정보</h2>
         </div>
 
         {/* 정보 표시 영역 */}
@@ -173,12 +193,19 @@ const UserInfo = () => {
           </button>
           <button
             onClick={handleLogout}
-            className="w-full py-2.5 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 font-medium transition text-sm"
+            className="w-full py-2.5 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 font-medium transition text-sm"
           >
             로그아웃
           </button>
         </div>
       </div>
+
+      <AlertModal 
+        isOpen={alertState.isOpen}
+        onClose={alertState.onConfirm}
+        message={alertState.message}
+        type={alertState.type}
+      />
     </div>
   )
 }
