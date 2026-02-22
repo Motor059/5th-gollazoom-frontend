@@ -1,4 +1,3 @@
-import React from 'react';
 import Calendar from '../../components/Calendar/Calendar';
 import HelpIcon from '../../components/guide/HelpIcon'; // 아이콘 추가
 

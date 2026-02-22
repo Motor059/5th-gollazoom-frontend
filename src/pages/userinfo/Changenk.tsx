@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { changeNickname, getUserInfo } from '../../api/users';
+import AlertModal from '../../components/modal/Alert';
 
 const ChangeNickname = () => {
   const navigate = useNavigate();
   const [nickname, setNickname] = useState("");
   const [currentNickname, setCurrentNickname] = useState("");
+
+  const [alertState, setAlertState] = useState({
+      isOpen: false,
+      message: "",
+      type: "info" as "success" | "error" | "info",
+      onConfirm: () => {} 
+  });
+
+  const showAlert = (message: string, type: "success" | "error" | "info" = "info", onConfirm?: () => void) => {
+      setAlertState({ 
+          isOpen: true, 
+          message, 
+          type, 
+          onConfirm: onConfirm || (() => setAlertState(prev => ({ ...prev, isOpen: false })))
+      });
+  };
 
   useEffect(() => {
     const fetchCurrentInfo = async () => {
@@ -26,24 +43,25 @@ const ChangeNickname = () => {
     e.preventDefault();
 
     if (!nickname.trim()) {
-      alert("변경할 닉네임을 입력해주세요.");
+      showAlert("변경할 닉네임을 입력해주세요.", "error");
       return;
     }
     if (nickname === currentNickname) {
-      alert("현재 닉네임과 동일합니다.");
+      showAlert("현재 닉네임과 동일합니다.", "error");
       return;
     }
 
     try {
       await changeNickname(nickname);
-      // 데이터 동기화로 새로운 닉네임 갱신
       localStorage.setItem('nickname', nickname);
-      alert("닉네임이 성공적으로 변경되었습니다!");
-      navigate('/userinfo');
+      
+      showAlert("닉네임이 성공적으로 변경되었습니다!", "success", () => {
+          navigate('/userinfo');
+      });
 
     } catch (error) {
       console.error("닉네임 변경 실패:", error);
-      alert("닉네임 변경 중 오류가 발생했습니다.");
+      showAlert("닉네임 변경 중 오류가 발생했습니다.", "error");
     }
   };
 
@@ -87,6 +105,13 @@ const ChangeNickname = () => {
           </button>
         </div>
       </div>
+
+      <AlertModal 
+          isOpen={alertState.isOpen}
+          onClose={alertState.onConfirm}
+          message={alertState.message}
+          type={alertState.type}
+      />
     </div>
   );
 };

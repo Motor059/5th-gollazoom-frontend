@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { changePassword } from '../../api/users';
 import { AxiosError } from 'axios';
+import AlertModal from '../../components/modal/Alert';
 
 const ChangePw = () => {
   const navigate = useNavigate();
@@ -12,6 +13,22 @@ const ChangePw = () => {
     confirmNewPassword: ''
   });
 
+  const [alertState, setAlertState] = useState({
+    isOpen: false,
+    message: "",
+    type: "info" as "success" | "error" | "info",
+    onConfirm: () => {} 
+  });
+
+  const showAlert = (message: string, type: "success" | "error" | "info" = "info", onConfirm?: () => void) => {
+    setAlertState({ 
+        isOpen: true, 
+        message, 
+        type, 
+        onConfirm: onConfirm || (() => setAlertState(prev => ({ ...prev, isOpen: false })))
+    });
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -20,19 +37,18 @@ const ChangePw = () => {
     e.preventDefault();
 
     if (formData.newpassword !== formData.confirmNewPassword) {
-      alert("새 비밀번호가 서로 일치하지 않습니다.");
+      showAlert("새 비밀번호가 서로 일치하지 않습니다.", "error");
       return;
     }
     if (formData.newpassword.length < 4) {
-      alert("비밀번호는 4자리 이상이어야 합니다.");
+      showAlert("비밀번호는 4자리 이상이어야 합니다.", "error");
       return;
     }
 
     try {
       const userId = localStorage.getItem('id');
       if (!userId) {
-        alert("로그인 정보가 유효하지 않습니다.");
-        navigate('/login');
+        showAlert("로그인 정보가 유효하지 않습니다.", "error", () => navigate('/login'));
         return;
       }
       // 비밀번호 변경 API 호출
@@ -40,14 +56,16 @@ const ChangePw = () => {
         currentpassword: formData.currentpassword,
         newpassword: formData.newpassword
       });
-      alert("비밀번호가 성공적으로 변경되었습니다.");
-      navigate('/deleteuser');
+      
+      showAlert("비밀번호가 성공적으로 변경되었습니다.", "success", () => {
+        navigate('/userinfo');
+      });
 
     } catch (error) {
       // API 실패 시
       const axiosError = error as AxiosError<{ message: string }>;
       const message = axiosError.response?.data?.message || "비밀번호 변경 실패";
-      alert(message);
+      showAlert(message, "error");
     }
   };
 
@@ -116,6 +134,13 @@ const ChangePw = () => {
           </button>
         </div>
       </div>
+
+      <AlertModal 
+        isOpen={alertState.isOpen}
+        onClose={alertState.onConfirm}
+        message={alertState.message}
+        type={alertState.type}
+      />
     </div>
   );
 };

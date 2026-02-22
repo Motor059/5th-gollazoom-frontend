@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import album from '../../assets/icons/album.png';
 import camera from '../../assets/icons/camera.png';
-import quick from '../../assets/icons/quick.png';
+//import quick from '../../assets/icons/quick.png';
 import { COLOR_OPTIONS, SEASON_OPTIONS, CATEGORY_OPTIONS, type Option } from '../../data/constants';
 import { addCloth } from '../../api/closet';
 
