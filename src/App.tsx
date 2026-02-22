@@ -56,10 +56,10 @@ function App() {
      </Routes>
 
       <UrgentAlert 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-         workTime={workTime}
-       />
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        workTime={workTime}
+        onRegisterSuccess={() => {}}       />
     </>
   );
 }
