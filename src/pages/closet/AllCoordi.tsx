@@ -2,14 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CoordiDetailModal, { type CoordiData } from '../../components/common/CoordiDetailModal'; // 새로 만든 모달 임포트
 import ClothItem from '../../components/common/ClothItem';
-import api from '../../api/axios';
+// import api from '../../api/axios';
 
+/*
 interface CoordiImages {
   TOP: string;
   BOTTOM: string;
   SHOES: string;
   OUTER: string;
 }
+*/
 
 // 기존 이름에서 컴포넌트 이름이 겹쳐 수정
 interface CoordiCloth {

@@ -1,6 +1,6 @@
 import { deleteUser, getUserInfo, getWashsetting, changeWashsetting } from "../../api/users";
 import { useNavigate } from "react-router-dom";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import AlertModal from "../../components/modal/Alert";
 
 const UserInfo = () => {

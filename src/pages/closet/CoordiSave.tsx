@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import clothes from '../../assets/icons/clothes.png';
-import { CATEGORY_OPTIONS, TAG_OPTIONS, SEASON_OPTIONS, type Option } from '../../data/constants';
+import { CATEGORY_OPTIONS, type Option } from '../../data/constants';
 // import { MOCK_CLOTHES } from '../../mocks/mockData';
 import ClothItem from '../../components/common/ClothItem';
 import api from '../../api/axios';
@@ -92,7 +92,7 @@ const CoordiSave = () => {
     //   return;
     // }
 
-    const token = localStorage.getItem('authToken');
+    // const token = localStorage.getItem('authToken');
     const editId = new URLSearchParams(window.location.search).get('edit'); // 수정 모드 확인
 
     // 명세서 기반 데이터 구조 생성
